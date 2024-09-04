@@ -1,0 +1,9 @@
+{
+  "name": "Trio",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/Trio",
+  "projectType": "application",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project Trio --web",
+  "targets": {}
+}
