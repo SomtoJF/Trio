@@ -19,6 +19,9 @@ dependencies:
     version: 2.7.0
 
 devDependencies:
+  '@nx-go/nx-go':
+    specifier: ^3.2.0
+    version: 3.2.0(nx@19.6.5)
   '@nx/eslint':
     specifier: 19.6.5
     version: 19.6.5(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@18.16.9)(eslint@8.57.0)(nx@19.6.5)
@@ -2412,6 +2415,15 @@ packages:
       - '@swc-node/register'
       - '@swc/core'
       - debug
+    dev: true
+
+  /@nx-go/nx-go@3.2.0(nx@19.6.5):
+    resolution: {integrity: sha512-oGr7kCBta/PdLKKPa2pRGWHxzPAbTvS1eZA+3NqEniw7JScVn+2w+6A/dctyPRidBQMwlpUO4mgfHzbwwt0xiQ==}
+    dependencies:
+      '@nx/devkit': 19.6.5(nx@19.6.5)
+      tslib: 2.7.0
+    transitivePeerDependencies:
+      - nx
     dev: true
 
   /@nx/devkit@19.6.5(nx@19.6.5):

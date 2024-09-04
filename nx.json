@@ -12,7 +12,10 @@
       "!{projectRoot}/.eslintrc.json",
       "!{projectRoot}/eslint.config.js"
     ],
-    "sharedGlobals": ["{workspaceRoot}/.github/workflows/ci.yml"]
+    "sharedGlobals": [
+      "{workspaceRoot}/.github/workflows/ci.yml",
+      "{workspaceRoot}/go.work"
+    ]
   },
   "nxCloudAccessToken": "OTI1NGUzZmYtMGViYS00YTczLThkZTYtMjNlM2Y2MTJlZGU4fHJlYWQtd3JpdGU=",
   "plugins": [
@@ -36,7 +39,8 @@
       "options": {
         "targetName": "lint"
       }
-    }
+    },
+    "@nx-go/nx-go"
   ],
   "generators": {
     "@nx/next": {
