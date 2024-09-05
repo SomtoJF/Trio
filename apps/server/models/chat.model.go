@@ -11,5 +11,5 @@ type Chat struct {
 	Messages   []Message `gorm:"foreignKey:ChatID" json:"messages"`
 	UserID     uint      `json:"-"`
 	ChatName   string    `json:"chatName"`
-	Agents     []Agent   `gorm:"foreignKey:ChatID" json:"agents"`
+	Agents     []Agent   `gorm:"foreignKey:ChatID;constraint:OnDelete:CASCADE" json:"agents"`
 }
