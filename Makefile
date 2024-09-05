@@ -20,5 +20,6 @@ run-migrate:
 	go run migration/migrate.go
 
 clean:
-	-pkill -f "CompileDaemon -command=./server" # Stop the server
-	-pkill -f "npx nx dev Trio" # Stop the admin-portal app
+	docker stop trio-db && docker rm trio-db
+	-pkill -f "CompileDaemon -command=./trio" # Stop the server
+	-pkill -f "npx nx dev Trio" # Stop the web app
