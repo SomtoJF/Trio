@@ -30,29 +30,30 @@ func Login(c *gin.Context) {
 	initializers.DB.Where("username=?", body.Username).Find(&userFound)
 
 	if userFound.ID == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "user not found"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "username or password is incorrect"})
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(userFound.PasswordHash), []byte(body.Password)); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid password"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "username or password is incorrect"})
 		return
 	}
 
 	generateToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id":  userFound.ID,
-		"exp": time.Now().Add(time.Hour * 24).Unix(),
+		"id":       userFound.ExternalID.String(),
+		"username": userFound.Username,
+		"exp":      time.Now().Add(time.Hour * 24 * 7).Unix(),
 	})
 
 	token, err := generateToken.SignedString([]byte(os.Getenv("SECRET")))
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to generate token"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "An error occured"})
 	}
 
-	c.SetCookie("Access_Token", token, 315360000, "/", domain, false, true)
+	c.SetCookie("Access_Token", token, 604800, "/", domain, false, true)
 
 	c.JSON(200, gin.H{
-		"message": "Login successful",
+		"message": token,
 	})
 }
