@@ -38,6 +38,7 @@ func main() {
 	{
 		authenticated.GET("/me", controllers.GetCurrentUser)
 		authenticated.POST("/logout", controllers.Logout)
+		authenticated.POST("/reset-password", controllers.ResetPassword)
 	}
 
 	r.Run()
