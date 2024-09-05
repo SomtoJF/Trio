@@ -6,9 +6,10 @@ import (
 )
 
 type User struct {
-	gorm.Model `json:"-"`
-	ExternalID uuid.UUID `gorm:"unique;type:uuid;default:gen_random_uuid()" json:"id"`
-	Username   string    `gorm:"unique;type:string" json:"username"`
-	FullName   string    `json:"fullName"`
-	Chats      []Chat    `gorm:"foreignKey:UserID" json:"chats"`
+	gorm.Model   `json:"-"`
+	ExternalID   uuid.UUID `gorm:"unique;type:uuid;default:gen_random_uuid()" json:"id"`
+	Username     string    `gorm:"unique;type:string" json:"userName"`
+	FullName     string    `json:"fullName"`
+	PasswordHash string    `json:"-"`
+	Chats        []Chat    `gorm:"foreignKey:UserID" json:"chats"`
 }
