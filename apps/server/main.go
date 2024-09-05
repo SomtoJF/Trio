@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/somtojf/trio/controllers"
 	"github.com/somtojf/trio/initializers"
 )
 
@@ -25,6 +26,9 @@ func main() {
 	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization"}
 
 	r.Use(cors.New(config))
+
+	r.POST("/login", controllers.Login)
+	r.POST("/signup", controllers.Signup)
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
