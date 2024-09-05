@@ -9,14 +9,14 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type SignUpInput struct {
+type signUpInput struct {
 	Username string `json:"userName" binding:"required,max=20"`
 	FullName string `json:"fullName" binding:"required,max=50"`
 	Password string `json:"password" binding:"required,max=20"`
 }
 
 func Signup(c *gin.Context) {
-	var body SignUpInput
+	var body signUpInput
 
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
