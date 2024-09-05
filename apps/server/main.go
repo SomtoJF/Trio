@@ -37,6 +37,7 @@ func main() {
 	authenticated.Use(middleware.CheckAuth())
 	{
 		authenticated.GET("/me", controllers.GetCurrentUser)
+		authenticated.POST("/logout", controllers.Logout)
 	}
 
 	r.Run()
