@@ -1,9 +1,9 @@
-.PHONY: run run-all run_client run_server clean
+.PHONY: run run-all run-client run-server run-migrate clean
 
 run: run-all
 
 run-all:
-	$(MAKE) -j 2 run-postgres run-server run_client 
+	$(MAKE) -j 2 run-migrate run-postgres run-server run_client 
 
 run_client:
 	npx nx dev Trio --port 3000
@@ -14,6 +14,10 @@ run-postgres:
 run-server:
 	cd apps/server && \
 	CompileDaemon -command="./trio"
+
+run-migrate:
+	cd apps/server && \
+	go run migration/migrate.go
 
 clean:
 	-pkill -f "CompileDaemon -command=./server" # Stop the server
