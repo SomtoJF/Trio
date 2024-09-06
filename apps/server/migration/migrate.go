@@ -47,4 +47,26 @@ func main() {
 		CREATE INDEX IF NOT EXISTS idx_messages_deleted_at ON messages(deleted_at);
 		ALTER TABLE messages ADD CONSTRAINT fk_messages_chat FOREIGN KEY (chat_id) REFERENCES chats(id);
 	`)
+
+	// Manually create GeminiLogs table with ENUM type
+	db.Exec(`
+		CREATE TABLE IF NOT EXISTS gemini_logs (
+			id SERIAL PRIMARY KEY,
+			created_at TIMESTAMP WITH TIME ZONE,
+			updated_at TIMESTAMP WITH TIME ZONE,
+			deleted_at TIMESTAMP WITH TIME ZONE,
+			external_id UUID DEFAULT gen_random_uuid(),
+			prompt TEXT,
+			input_tokens INTEGER,
+			output_tokens INTEGER,
+			total_tokens INTEGER,
+			sender_type sender_type_enum,
+			sender_id INTEGER
+		)
+	`)
+
+	// Add index for deleted_at
+	db.Exec(`
+		CREATE INDEX IF NOT EXISTS idx_gemini_logs_deleted_at ON gemini_logs(deleted_at);
+	`)
 }

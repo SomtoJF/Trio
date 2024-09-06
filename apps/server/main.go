@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 
@@ -29,10 +30,11 @@ func main() {
 	r := gin.Default()
 	clientAddress := os.Getenv("CLIENT_ADDRESS")
 
-	geminiClient, err := clients.CreateGeminiClient()
+	geminiClient, err := clients.CreateGeminiClient(context.Background())
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer geminiClient.Close()
 
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{clientAddress}
@@ -55,6 +57,8 @@ func main() {
 		authenticated.GET("/me", controllers.GetCurrentUser)
 		authenticated.POST("/logout", controllers.Logout)
 		authenticated.POST("/reset-password", controllers.ResetPassword)
+
+		authenticated.GET("/completions", controllers.GetCompletion)
 	}
 
 	r.Run()

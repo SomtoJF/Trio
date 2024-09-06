@@ -8,12 +8,11 @@ import (
 	"google.golang.org/api/option"
 )
 
-func CreateGeminiClient() (*genai.Client, error) {
-	ctx := context.Background()
+func CreateGeminiClient(ctx context.Context) (*genai.Client, error) {
 	client, err := genai.NewClient(ctx, option.WithAPIKey(os.Getenv("GEMINI_API_KEY")))
 	if err != nil {
 		return nil, err
 	}
-	defer client.Close()
+
 	return client, nil
 }
