@@ -14,7 +14,11 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
-    "paths": {}
+    "paths": {
+      "@trio/components": ["libs/components/src/index.ts"],
+      "@trio/components/server": ["libs/components/src/server.ts"],
+      "@/*": ["./*"]
+    }
   },
   "exclude": ["node_modules", "tmp"]
 }
