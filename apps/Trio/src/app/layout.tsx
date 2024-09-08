@@ -14,9 +14,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="w-screen bg-black flex justify-center">
+      <body className="w-screen bg-black text-white flex justify-center">
         <SpotlightWrapper />
-        <div className="max-w-screen-2xl">{children}</div>
+        <div className="max-w-screen-2xl w-full">{children}</div>
       </body>
     </html>
   );
