@@ -1,9 +1,17 @@
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
-export function Navbar() {
+export function Navbar({ className }: { className?: string }) {
   return (
-    <nav className="w-full h-16 flex justify-between items-center text-sm relative z-20">
-      <h1 className="font-extrabold text-2xl">Trio</h1>
+    <nav
+      className={cn(
+        'w-full h-16 flex justify-between items-center text-sm relative z-20',
+        className
+      )}
+    >
+      <Link href={'/'} className="font-extrabold text-2xl">
+        Trio
+      </Link>
       <ul className="list-none text-gray-200 flex items-center gap-5 pl-[170px]">
         <li>Research</li>
         <li>About</li>

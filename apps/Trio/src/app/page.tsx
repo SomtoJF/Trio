@@ -3,6 +3,7 @@
 import { Button } from '@/shadcn/ui/button';
 import { Navbar } from '@trio/components';
 import { HoverBorderGradient } from '@/shadcn/ui/hover-border-gradient';
+import { FlipWords } from '@/shadcn/ui/flip-words';
 import { FaAngleRight } from 'react-icons/fa6';
 
 export default function Index() {
@@ -20,10 +21,18 @@ export default function Index() {
           <FaAngleRight className="group-hover:translate-x-1 transition-transform duration-300 ease-in-out" />
         </HoverBorderGradient>
         <h1 className="text-4xl sm:text-6xl text-white relative z-20 lg:px-20">
-          Ever wondered what it&apos;s like to talk to two AI agents at once?
+          Ever wondered what it&apos;s like to talk to <br /> two{' '}
+          <FlipWords
+            words={['GPTs', 'Geminis', 'Claudes']}
+            duration={2000}
+            className="text-white"
+          />{' '}
+          <br />
+          at once?
         </h1>
         <p className="relative z-20 bg-clip-text text-transparent bg-gradient-to-b from-neutral-200 to-neutral-500 lg:w-1/2 self-center">
-          Imagine if you had two LLMs in a groupchat. Thats Trio in a nutshell.
+          Trio empowers you to do exactly this by letting you add agents with
+          custom personalities and traits to group chats.
         </p>
         <div className="flex gap-10 self-center">
           <Button className="bg-gray-200 px-8 py-4 rounded-lg text-black hover:bg-gray-200">
