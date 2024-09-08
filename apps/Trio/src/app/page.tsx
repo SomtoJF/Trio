@@ -1,25 +1,20 @@
 'use client';
 
 import { Button } from '@/shadcn/ui/button';
-import { Spotlight } from '@/shadcn/ui/spotlight';
 import { Navbar } from '@trio/components';
 import { HoverBorderGradient } from '@/shadcn/ui/hover-border-gradient';
 import { FaAngleRight } from 'react-icons/fa6';
 
 export default function Index() {
   return (
-    <div className="w-screen min-h-screen bg-black text-gray-200 relative overflow-hidden px-4 lg:px-10">
-      <Spotlight
-        className="-top-40 left-0 md:left-60 md:-top-20 z-50"
-        fill="white"
-      />
+    <div className="w-full min-h-screen bg-black text-gray-200 relative overflow-hidden px-4 lg:px-10">
       <Navbar />
       <section className="w-full text-white text-center px-4 lg:px-32 flex flex-col gap-10 relative z-20 h-[90vh] bg-black bg-grid-small-white/[0.2] items-center pt-[8%]">
         <div className="absolute pointer-events-none inset-0 flex items-center justify-center bg-black [mask-image:radial-gradient(ellipse_at_center,transparent_20%,white)]"></div>
         <HoverBorderGradient
           containerClassName="rounded-full"
           as="button"
-          className="bg-transparent text-gray-200 flex items-center py-1 px-4 space-x-2 text-xs font-semibold group"
+          className="bg-gray-900 text-gray-200 flex items-center py-1 px-4 space-x-2 text-xs font-semibold group"
         >
           <p>still in production, but coming soon</p>
           <FaAngleRight className="group-hover:translate-x-1 transition-transform duration-300 ease-in-out" />
