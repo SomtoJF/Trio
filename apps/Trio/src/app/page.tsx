@@ -20,7 +20,7 @@ export default function Index() {
           <p>still in production, but coming soon</p>
           <FaAngleRight className="group-hover:translate-x-1 transition-transform duration-300 ease-in-out" />
         </HoverBorderGradient>
-        <h1 className="text-4xl sm:text-6xl text-white relative z-20 lg:px-20">
+        <h1 className="text-4xl sm:text-5xl text-white relative z-20 lg:px-20 font-semibold">
           Ever wondered what it&apos;s like to talk to <br /> two{' '}
           <FlipWords
             words={['GPTs', 'Geminis', 'Claudes']}
@@ -35,7 +35,7 @@ export default function Index() {
           custom personalities and traits to group chats.
         </p>
         <div className="flex gap-10 self-center">
-          <Button className="bg-gray-200 px-8 py-4 rounded-lg text-black hover:bg-gray-200">
+          <Button className="bg-white px-8 py-4 rounded-lg text-black hover:bg-gray-200">
             Get Started
           </Button>
           <Button

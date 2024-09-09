@@ -1,5 +1,8 @@
 import SpotlightWrapper from '../components/SpotlightWrapper';
 import './global.css';
+import { Inter } from 'next/font/google';
+
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
   title: 'Welcome to trio',
@@ -13,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={inter.className}>
       <body className="w-screen bg-black text-white flex justify-center">
         <SpotlightWrapper />
         <div className="max-w-screen-2xl w-full">{children}</div>
