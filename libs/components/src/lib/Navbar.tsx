@@ -19,6 +19,7 @@ import {
 } from '@/shadcn/ui/sheet';
 import { ReactElement, ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
+import { v4 } from 'uuid';
 
 type NavLink = { title: string; icon?: ReactElement; href: string };
 const NavLinks: NavLink[] = [
@@ -41,7 +42,7 @@ export function Navbar({ className }: { className?: string }) {
       </Link>
       <ul className="list-none text-gray-200 md:flex items-center gap-5 pl-[170px] hidden">
         {NavLinks.map((link) => (
-          <li>
+          <li key={v4()}>
             <Link href={link.href} className="flex items-center">
               {link.title}
             </Link>

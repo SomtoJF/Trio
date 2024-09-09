@@ -1,6 +1,7 @@
 import SpotlightWrapper from '../components/SpotlightWrapper';
 import './global.css';
 import { Inter } from 'next/font/google';
+import Providers from './providers';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -17,10 +18,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.className}>
-      <body className="w-screen bg-black text-white flex justify-center">
-        <SpotlightWrapper />
-        <div className="max-w-screen-2xl w-full">{children}</div>
-      </body>
+      <Providers>
+        <body className="w-screen bg-black text-white flex justify-center">
+          <SpotlightWrapper />
+          <div className="max-w-screen-2xl w-full">{children}</div>
+        </body>
+      </Providers>
     </html>
   );
 }

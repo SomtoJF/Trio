@@ -20,6 +20,15 @@
   animation: meteor 5s linear infinite;
 }
 
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
 @keyframes hover-border-gradient {
   0% {
     background-position: 0% 0%;

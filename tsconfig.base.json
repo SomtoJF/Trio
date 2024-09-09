@@ -16,9 +16,17 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
+      "@/*": ["./*"],
       "@trio/components": ["libs/components/src/index.ts"],
       "@trio/components/server": ["libs/components/src/server.ts"],
-      "@/*": ["./*"]
+      "@trio/hooks": ["libs/hooks/src/index.ts"],
+      "@trio/hooks/server": ["libs/hooks/src/server.ts"],
+      "@trio/query-key-factory": ["libs/query-key-factory/src/index.ts"],
+      "@trio/query-key-factory/server": [
+        "libs/query-key-factory/src/server.ts"
+      ],
+      "@trio/services": ["libs/services/src/index.ts"],
+      "@trio/services/server": ["libs/services/src/server.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
