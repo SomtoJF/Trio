@@ -20,6 +20,30 @@ import {
 import { ReactElement, ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { v4 } from 'uuid';
+import { useAuthStore } from '@trio/hooks';
+import {
+  Github,
+  LogOut,
+  MessageCircleHeart,
+  Plus,
+  Settings,
+  User,
+} from 'lucide-react';
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuPortal,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '@/shadcn/ui/dropdown-menu';
 
 type NavLink = { title: string; icon?: ReactElement; href: string };
 const NavLinks: NavLink[] = [
@@ -30,6 +54,7 @@ const NavLinks: NavLink[] = [
 ];
 
 export function Navbar({ className }: { className?: string }) {
+  const user = useAuthStore((state) => state.user);
   return (
     <nav
       className={cn(
@@ -40,7 +65,11 @@ export function Navbar({ className }: { className?: string }) {
       <Link href={'/'} className="font-extrabold text-2xl">
         Trio
       </Link>
-      <ul className="list-none text-gray-200 md:flex items-center gap-5 pl-[170px] hidden">
+      <ul
+        className={`list-none text-gray-200 md:flex items-center gap-5 hidden ${
+          !user && 'pl-[170px]'
+        }`}
+      >
         {NavLinks.map((link) => (
           <li key={v4()}>
             <Link href={link.href} className="flex items-center">
@@ -49,17 +78,25 @@ export function Navbar({ className }: { className?: string }) {
           </li>
         ))}
       </ul>
-      <div className="gap-2 items-center hidden md:flex">
-        <Link
-          href="/login"
-          className="bg-gray-200 px-8 py-2 inline-flex items-center h-max rounded-lg text-black hover:bg-gray-200"
-        >
-          Login
-        </Link>
-        <Link href="/signup" className=" px-8 py-4 bg-transparent">
-          Sign Up
-        </Link>
-      </div>
+      {user ? (
+        <Dropdown>
+          <div className="w-10 h-10 rounded-full bg-neutral-800 text-white md:flex hidden justify-center items-center">
+            {user.fullName.split(' ').map((name) => name.charAt(0))}
+          </div>
+        </Dropdown>
+      ) : (
+        <div className="gap-2 items-center hidden md:flex">
+          <Link
+            href="/login"
+            className="bg-gray-200 px-8 py-2 inline-flex items-center h-max rounded-lg text-black hover:bg-gray-200"
+          >
+            Login
+          </Link>
+          <Link href="/signup" className=" px-8 py-4 bg-transparent">
+            Sign Up
+          </Link>
+        </div>
+      )}
       <MobileNav>
         <IoIosMenu className="text-2xl" />
       </MobileNav>
@@ -69,6 +106,7 @@ export function Navbar({ className }: { className?: string }) {
 
 const MobileNav = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
+  const user = useAuthStore((state) => state.user);
 
   return (
     <Sheet>
@@ -108,25 +146,40 @@ const MobileNav = ({ children }: { children: ReactNode }) => {
             <h3 className="text-xs font-bold text-gray-500 mb-2">
               YOUR ACCOUNT
             </h3>
-            <ul className="">
-              <li>
-                <Link
-                  href={'/login'}
-                  className="flex gap-2 items-center w-full py-2"
-                >
-                  <MdLogin />
-                  Login
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href={'/signup'}
-                  className="flex gap-2 items-center w-full py-2"
-                >
-                  <IoCreateOutline />
-                  Signup
-                </Link>
-              </li>
+            <ul>
+              {user ? (
+                <li className="w-full">
+                  <Link
+                    href={'/signout'}
+                    className="flex gap-2 items-center w-full py-2 text-red-500"
+                  >
+                    <MdLogin />
+                    Logout
+                  </Link>
+                </li>
+              ) : (
+                <>
+                  {' '}
+                  <li>
+                    <Link
+                      href={'/login'}
+                      className="flex gap-2 items-center w-full py-2"
+                    >
+                      <MdLogin />
+                      Login
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href={'/signup'}
+                      className="flex gap-2 items-center w-full py-2"
+                    >
+                      <IoCreateOutline />
+                      Signup
+                    </Link>
+                  </li>
+                </>
+              )}
             </ul>
           </div>
         </SheetFooter>
@@ -134,3 +187,63 @@ const MobileNav = ({ children }: { children: ReactNode }) => {
     </Sheet>
   );
 };
+
+function Dropdown({ children }: { children: ReactNode }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56">
+        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuItem disabled>
+            <User className="mr-2 h-4 w-4" />
+            <span>Profile</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem disabled>
+            <Settings className="mr-2 h-4 w-4" />
+            <span>Settings</span>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuItem disabled>
+            <Plus className="mr-2 h-4 w-4" />
+            <span>New Chat</span>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem>
+          <Link
+            href={'https://github.com/somtojf/trio'}
+            target="_blank"
+            className="space-x-2 flex items-center"
+          >
+            <Github className=" h-4 w-4" />
+            <span>GitHub</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem>
+          <Link
+            href="mailto:somtochukwujf@gmail.com"
+            target="_blank"
+            className="space-x-2 flex items-center"
+          >
+            <MessageCircleHeart className="h-4 w-4" />
+            <span>Feedback</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem>
+          <Link
+            href="/signout"
+            className="space-x-2 flex items-center text-red-500"
+          >
+            <LogOut className=" h-4 w-4" />
+            <span>Log out</span>
+          </Link>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}

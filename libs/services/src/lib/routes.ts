@@ -24,7 +24,7 @@ export const BaseRoute = isProduction ? 'FILL_ME_IN' : 'http://localhost:4000';
 
 const routeConfig = {
   Login: 'login',
-  SignOut: 'signout',
+  SignOut: 'logout',
   SignUp: 'signup',
   Me: 'me',
 } as const;

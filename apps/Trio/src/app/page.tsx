@@ -5,8 +5,24 @@ import { Navbar } from '@trio/components';
 import { HoverBorderGradient } from '@/shadcn/ui/hover-border-gradient';
 import { FlipWords } from '@/shadcn/ui/flip-words';
 import { FaAngleRight } from 'react-icons/fa6';
+import { getCurrentUser } from '@trio/services';
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@trio/query-key-factory';
+import { useEffect } from 'react';
+import { useAuthStore } from '@trio/hooks';
 
 export default function Index() {
+  const setUser = useAuthStore((state) => state.setUser);
+
+  const currentUserQuery = useQuery({
+    queryKey: queryKeys.user.currentUser(),
+    queryFn: getCurrentUser,
+  });
+
+  useEffect(() => {
+    if (!currentUserQuery.isFetching) setUser(currentUserQuery.data ?? null);
+  }, [currentUserQuery.isFetching, currentUserQuery.data]);
+
   return (
     <div className="w-full min-h-screen bg-black text-gray-200 relative overflow-hidden px-4 lg:px-10">
       <Navbar />

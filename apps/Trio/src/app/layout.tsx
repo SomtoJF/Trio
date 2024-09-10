@@ -19,9 +19,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.className}>
       <Providers>
-        <body className="w-screen bg-black text-white flex justify-center">
+        <body className="w-screen bg-black text-white flex justify-center min-h-screen">
           <SpotlightWrapper />
-          <div className="max-w-screen-2xl w-full">{children}</div>
+          <div className="max-w-screen-2xl w-full h-full">{children}</div>
         </body>
       </Providers>
     </html>
