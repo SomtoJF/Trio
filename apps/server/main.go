@@ -59,6 +59,25 @@ func main() {
 		authenticated.POST("/reset-password", controllers.ResetPassword)
 
 		authenticated.GET("/completions", controllers.GetCompletion)
+
+		// Chat related endpoints
+		chats := authenticated.Group("/chats")
+		{
+			chats.POST("", controllers.CreateChat)
+			chats.GET("/:chatId", controllers.GetChatInfo)
+			chats.DELETE("/:chatId", controllers.DeleteChat)
+			chats.PUT("/:chatId", controllers.UpdateChat)
+			chats.POST("/:chatId/messages", controllers.AddMessageToChat)
+			chats.POST("/:chatId/agents", controllers.AddAgentToChat)
+		}
+
+		// Agent related endpoints
+		agents := authenticated.Group("/agents")
+		{
+			agents.GET("/:agentId", controllers.GetAgent)
+			agents.PUT("/:agentId", controllers.UpdateAgent)
+			agents.DELETE("/:agentId", controllers.DeleteAgent)
+		}
 	}
 
 	r.Run()
