@@ -10,9 +10,10 @@ import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@trio/query-key-factory';
 import { useEffect } from 'react';
 import { useAuthStore } from '@trio/hooks';
+import Link from 'next/link';
 
 export default function Index() {
-  const setUser = useAuthStore((state) => state.setUser);
+  const { setUser, user } = useAuthStore((state) => state);
 
   const currentUserQuery = useQuery({
     queryKey: queryKeys.user.currentUser(),
@@ -51,8 +52,13 @@ export default function Index() {
           custom personalities and traits to group chats.
         </p>
         <div className="flex gap-10 self-center">
-          <Button className="bg-white px-8 py-4 rounded-lg text-black hover:bg-gray-200">
-            Get Started
+          <Button className="bg-white p-0 rounded-lg text-black hover:bg-gray-200">
+            <Link
+              href={user ? '/chat' : '/login'}
+              className="w-full h-full flex justify-center items-center px-8 py-4"
+            >
+              Get Started
+            </Link>
           </Button>
           <Button
             variant={'outline'}
