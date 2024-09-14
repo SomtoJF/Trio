@@ -61,6 +61,11 @@ func AddAgentToChat(c *gin.Context) {
 		return
 	}
 
+	if len(body.Traits) > 4 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Agent cannot have more than 4 traits"})
+		return
+	}
+
 	currentUser, exists := c.Get("currentUser")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
