@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/somtojf/trio/initializers"
 	"github.com/somtojf/trio/models"
+	"github.com/somtojf/trio/types"
 	"gorm.io/gorm"
 )
 
@@ -177,9 +178,7 @@ func AddMessageToChat(c *gin.Context) {
 	}
 
 	var body struct {
-		Content    string `json:"content" binding:"required"`
-		SenderType string `json:"senderType" binding:"required"`
-		SenderID   uint   `json:"senderId" binding:"required"`
+		Content string `json:"content" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&body); err != nil {
@@ -202,8 +201,8 @@ func AddMessageToChat(c *gin.Context) {
 
 	message := models.Message{
 		Content:    body.Content,
-		SenderType: body.SenderType,
-		SenderID:   body.SenderID,
+		SenderType: string(types.SenderTypeUser),
+		SenderID:   userModel.ID,
 		ChatID:     chat.ID,
 	}
 
@@ -215,7 +214,7 @@ func AddMessageToChat(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": message})
 }
 
-// GetChatInfo retrieves chat information including its agents and messages
+// GetChatInfo retrieves chat information including its agents and messages with sender details
 func GetChatInfo(c *gin.Context) {
 	chatID, err := uuid.Parse(c.Param("chatId"))
 	if err != nil {
@@ -231,12 +230,68 @@ func GetChatInfo(c *gin.Context) {
 	userModel := currentUser.(models.User)
 
 	var chat models.Chat
-	if err := initializers.DB.Preload("Agents").Preload("Messages", func(db *gorm.DB) *gorm.DB {
-		return db.Order("created_at ASC")
-	}).First(&chat, "external_id = ? AND user_id = ?", chatID, userModel.ID).Error; err != nil {
+	if err := initializers.DB.Preload("Agents").
+		Preload("Messages", func(db *gorm.DB) *gorm.DB {
+			return db.Order("created_at ASC")
+		}).
+		First(&chat, "external_id = ? AND user_id = ?", chatID, userModel.ID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Chat not found"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"chat": chat})
+	// Prepare the response
+	type MessageWithSender struct {
+		models.Message
+		Sender interface{} `json:"sender"`
+	}
+
+	var messagesWithSenders []MessageWithSender
+
+	for _, message := range chat.Messages {
+		var sender interface{}
+
+		if message.SenderType == string(types.SenderTypeUser) {
+			var user models.User
+			initializers.DB.First(&user, message.SenderID)
+			sender = struct {
+				ID       uuid.UUID `json:"id"`
+				Username string    `json:"username"`
+				FullName string    `json:"fullName"`
+			}{
+				ID:       user.ExternalID,
+				Username: user.Username,
+				FullName: user.FullName,
+			}
+		} else if message.SenderType == string(types.SenderTypeAgent) {
+			var agent models.Agent
+			initializers.DB.First(&agent, message.SenderID)
+			sender = struct {
+				ID     uuid.UUID `json:"id"`
+				Name   string    `json:"name"`
+				Lingo  string    `json:"lingo"`
+				Traits []string  `json:"traits"`
+			}{
+				ID:     agent.ExternalID,
+				Name:   agent.Name,
+				Lingo:  agent.Lingo,
+				Traits: agent.Traits,
+			}
+		}
+
+		messagesWithSenders = append(messagesWithSenders, MessageWithSender{
+			Message: message,
+			Sender:  sender,
+		})
+	}
+
+	// Prepare the chat response
+	chatResponse := struct {
+		models.Chat
+		Messages []MessageWithSender `json:"messages"`
+	}{
+		Chat:     chat,
+		Messages: messagesWithSenders,
+	}
+
+	c.JSON(http.StatusOK, gin.H{"chat": chatResponse})
 }
