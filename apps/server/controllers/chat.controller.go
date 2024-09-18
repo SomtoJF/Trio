@@ -1,13 +1,10 @@
 package controllers
 
 import (
-	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	aihelpers "github.com/somtojf/trio/ai-helpers"
 	"github.com/somtojf/trio/initializers"
 	"github.com/somtojf/trio/models"
 	"github.com/somtojf/trio/types"
@@ -43,7 +40,7 @@ func CreateChat(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"chat": chat})
+	c.JSON(http.StatusCreated, gin.H{"data": chat})
 }
 
 // AddAgentToChat adds an agent to a chat (max 2 agents per chat)
@@ -88,6 +85,14 @@ func AddAgentToChat(c *gin.Context) {
 		return
 	}
 
+	// Check if an agent with the same name already exists in this chat
+	for _, existingAgent := range chat.Agents {
+		if existingAgent.Name == body.Name {
+			c.JSON(http.StatusConflict, gin.H{"error": "An agent with this name already exists in the chat"})
+			return
+		}
+	}
+
 	agent := models.Agent{
 		Name:   body.Name,
 		Lingo:  body.Lingo,
@@ -100,7 +105,7 @@ func AddAgentToChat(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"agent": agent})
+	c.JSON(http.StatusCreated, gin.H{"data": agent})
 }
 
 // DeleteChat deletes a chat
@@ -129,7 +134,7 @@ func DeleteChat(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Chat deleted successfully"})
+	c.JSON(http.StatusNoContent, gin.H{"message": "Chat deleted successfully"})
 }
 
 // UpdateChat updates a chat's name
@@ -169,71 +174,7 @@ func UpdateChat(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"chat": chat})
-}
-
-// AddMessageToChat adds a new message to a chat
-func AddMessageToChat(c *gin.Context) {
-	chatID, err := uuid.Parse(c.Param("chatId"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid chat ID"})
-		return
-	}
-
-	var body struct {
-		Content string `json:"content" binding:"required"`
-	}
-
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	currentUser, exists := c.Get("currentUser")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
-		return
-	}
-	userModel := currentUser.(models.User)
-
-	var chat models.Chat
-	if err := initializers.DB.Preload("Agents").First(&chat, "external_id = ? AND user_id = ?", chatID, userModel.ID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Chat not found"})
-		return
-	}
-
-	if len(chat.Agents) < 1 {
-		c.JSON(http.StatusFailedDependency, gin.H{"error": "No agents found in the chat"})
-		return
-	}
-
-	agent1Traits := strings.Join(chat.Agents[0].Traits, ", ")
-
-	completionsRequest := types.GeminiCompletionsRequest{
-		Prompt:     fmt.Sprintf("Respond to this message. {message: %s} using as few or as many traits from this lost of traits {traits: %s} based on our conversation and context. If there's no context respond in a straighforward manner", body.Content, agent1Traits),
-		SenderID:   userModel.ID,
-		SenderType: types.SenderTypeUser,
-	}
-
-	resp, err := aihelpers.GetGeminiCompletions(c, completionsRequest)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	message := models.Message{
-		Content:    body.Content,
-		SenderType: string(types.SenderTypeUser),
-		SenderID:   userModel.ID,
-		ChatID:     chat.ID,
-	}
-
-	if err := initializers.DB.Create(&message).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add message to chat"})
-		return
-	}
-
-	c.JSON(http.StatusCreated, gin.H{"message": resp.Candidates[0].Content.Parts[0]})
+	c.JSON(http.StatusOK, gin.H{"data": chat})
 }
 
 // GetChatInfo retrieves chat information including its agents and messages with sender details
@@ -315,5 +256,5 @@ func GetChatInfo(c *gin.Context) {
 		Messages: messagesWithSenders,
 	}
 
-	c.JSON(http.StatusOK, gin.H{"chat": chatResponse})
+	c.JSON(http.StatusOK, gin.H{"data": chatResponse})
 }
