@@ -1,8 +1,10 @@
 package controllers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -95,8 +97,11 @@ func AddMessageToChat(c *gin.Context) {
 					Role: role,
 				})
 			}
+			agentTraits := strings.Join(agent.Traits, ", ")
 
-			res, err := cs.SendMessage(c.Request.Context(), genai.Text(body.Content))
+			prompt := fmt.Sprintf("Respond to this message. {message: %s} using as few or as many traits from this lost of traits {traits: %s} based on our conversation and context. If there's no context respond in a straighforward manner", body.Content, agentTraits)
+
+			res, err := cs.SendMessage(c.Request.Context(), genai.Text(prompt))
 			if err != nil {
 				log.Printf("Error getting response from agent %s: %v", agent.Name, err)
 				return
