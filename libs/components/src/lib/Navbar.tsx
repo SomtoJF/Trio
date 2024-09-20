@@ -21,29 +21,7 @@ import { ReactElement, ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { v4 } from 'uuid';
 import { useAuthStore } from '@trio/hooks';
-import {
-  Github,
-  LogOut,
-  MessageCircleHeart,
-  Plus,
-  Settings,
-  User,
-} from 'lucide-react';
-
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuPortal,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from '@/shadcn/ui/dropdown-menu';
+import { NavDropdown } from './NavDropdown';
 
 type NavLink = { title: string; icon?: ReactElement; href: string };
 const NavLinks: NavLink[] = [
@@ -79,11 +57,11 @@ export function Navbar({ className }: { className?: string }) {
         ))}
       </ul>
       {user ? (
-        <Dropdown>
+        <NavDropdown>
           <div className="w-10 h-10 rounded-full bg-neutral-800 text-white md:flex hidden justify-center items-center">
             {user.fullName.split(' ').map((name) => name.charAt(0))}
           </div>
-        </Dropdown>
+        </NavDropdown>
       ) : (
         <div className="gap-2 items-center hidden md:flex">
           <Link
@@ -187,63 +165,3 @@ const MobileNav = ({ children }: { children: ReactNode }) => {
     </Sheet>
   );
 };
-
-function Dropdown({ children }: { children: ReactNode }) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56">
-        <DropdownMenuLabel>My Account</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem disabled>
-            <User className="mr-2 h-4 w-4" />
-            <span>Profile</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem disabled>
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem disabled>
-            <Plus className="mr-2 h-4 w-4" />
-            <span>New Chat</span>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <Link
-            href={'https://github.com/somtojf/trio'}
-            target="_blank"
-            className="space-x-2 flex items-center"
-          >
-            <Github className=" h-4 w-4" />
-            <span>GitHub</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem>
-          <Link
-            href="mailto:somtochukwujf@gmail.com"
-            target="_blank"
-            className="space-x-2 flex items-center"
-          >
-            <MessageCircleHeart className="h-4 w-4" />
-            <span>Feedback</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <Link
-            href="/signout"
-            className="space-x-2 flex items-center text-red-500"
-          >
-            <LogOut className=" h-4 w-4" />
-            <span>Log out</span>
-          </Link>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
