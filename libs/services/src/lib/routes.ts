@@ -16,11 +16,16 @@ function createPrefixedRoutes<T extends RouteValues<T>>(
   }, {} as { [K in keyof T]: string });
 }
 
-const candidateRoutes = {
+const chatRoutes = {
   CreateWithAgents: 'create-with-agents',
 } as const;
 
-const Chats = createPrefixedRoutes('chats', candidateRoutes);
+const currentUserRoutes = {
+  Chats: 'chats',
+} as const;
+
+const Chats = createPrefixedRoutes('chats', chatRoutes);
+const CurrentUser = createPrefixedRoutes('me', currentUserRoutes);
 
 const routeConfig = {
   Login: 'login',
@@ -28,6 +33,7 @@ const routeConfig = {
   SignUp: 'signup',
   Me: 'me',
   Chats,
+  CurrentUser,
 } as const;
 
 export type Route = typeof routeConfig;
