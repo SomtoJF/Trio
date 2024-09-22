@@ -37,9 +37,11 @@ export function NavDropdown({ children }: { children: ReactNode }) {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem disabled>
-            <Plus className="mr-2 h-4 w-4" />
-            <span>New Chat</span>
+          <DropdownMenuItem>
+            <Link href={'/chat/new'} className="space-x-2 flex items-center">
+              <Plus className="h-4 w-4" />
+              <span>New Chat</span>
+            </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

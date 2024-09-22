@@ -54,7 +54,7 @@ func main() {
 	authenticated := r.Group("/")
 	authenticated.Use(middleware.CheckAuth())
 	{
-		authenticated.GET("/me", controllers.GetCurrentUser)
+
 		authenticated.POST("/logout", controllers.Logout)
 		authenticated.POST("/reset-password", controllers.ResetPassword)
 
@@ -69,6 +69,13 @@ func main() {
 			chats.PUT("/:chatId", controllers.UpdateChat)
 			chats.POST("/:chatId/messages", controllers.AddMessageToChat)
 			chats.POST("/:chatId/agents", controllers.AddAgentToChat)
+			chats.POST("/create-with-agents", controllers.CreateChatWithAgents)
+		}
+
+		user := authenticated.Group("/me")
+		{
+			user.GET("", controllers.GetCurrentUser)
+			user.GET("/chats", controllers.GetUserChats)
 		}
 
 		// Agent related endpoints

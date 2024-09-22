@@ -258,3 +258,55 @@ func GetChatInfo(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"data": chatResponse})
 }
+
+// CreateChatWithAgents creates a new chat with agents for the authenticated user
+func CreateChatWithAgents(c *gin.Context) {
+	var body struct {
+		ChatName string `json:"chatName" binding:"required,max=20"`
+		Agents   []struct {
+			Name   string   `json:"name" binding:"required,max=20"`
+			Lingo  string   `json:"lingo" binding:"required,max=20"`
+			Traits []string `json:"traits" binding:"required"`
+		} `json:"agents" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	currentUser, exists := c.Get("currentUser")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+	userModel := currentUser.(models.User)
+
+	chat := models.Chat{
+		ChatName: body.ChatName,
+		UserID:   userModel.ID,
+	}
+
+	result := initializers.DB.Create(&chat)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create chat"})
+		return
+	}
+
+	// Create agents
+	for _, agentData := range body.Agents {
+		agent := models.Agent{
+			Name:   agentData.Name,
+			Lingo:  agentData.Lingo,
+			Traits: agentData.Traits,
+			ChatID: chat.ID,
+		}
+
+		if err := initializers.DB.Create(&agent).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create agent"})
+			return
+		}
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"data": chat})
+}

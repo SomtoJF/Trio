@@ -28,7 +28,7 @@ const NavLinks: NavLink[] = [
   { title: 'Home', icon: <IoMdHome />, href: '/' },
   { title: 'Research', href: '/research', icon: <SiRoamresearch /> },
   { title: 'About', href: '/about', icon: <CiSquareQuestion /> },
-  { title: 'Chat', icon: <BsChatHeart />, href: '/chat' },
+  { title: 'Chat', icon: <BsChatHeart />, href: '/chat/new' },
 ];
 
 export function Navbar({ className }: { className?: string }) {
