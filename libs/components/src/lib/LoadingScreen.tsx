@@ -5,7 +5,7 @@ export function LoadingScreen({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'w-full h-full flex justify-center items-center bg-neutral-950',
+        'w-full h-screen flex justify-center items-center bg-neutral-950',
         className
       )}
     >

@@ -1,20 +1,9 @@
+import { Agent, Chat } from '@trio/types';
 import { BaseRoute, Route } from '../routes';
 
 interface Data {
   chatName: string;
-  agents: Agent[];
-}
-interface Agent {
-  name: string;
-  lingo: string;
-  traits: string[];
-}
-
-interface Chat {
-  id: string;
-  chatName: string;
-  messages: any[];
-  agents: any[];
+  agents: Partial<Agent>[];
 }
 
 export async function createChatWithAgents(data: Data) {
@@ -36,4 +25,14 @@ export async function currentUserChats(): Promise<Chat[]> {
   if (res.status > 299) throw new Error(res.statusText);
   const result = await res.json();
   return result.data as Chat[];
+}
+
+export async function getOneChat(id: string): Promise<Chat> {
+  const res = await fetch(`${BaseRoute}/${Route.Chats.Default}${id}`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+  if (res.status > 299) throw new Error(res.statusText);
+  const result = await res.json();
+  return result.data as Chat;
 }
