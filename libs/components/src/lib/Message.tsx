@@ -6,6 +6,8 @@ interface Props {
   senderName?: string;
 }
 
+const tagStyles = 'text-blue-500';
+
 export function Message({ senderType, messageContent, senderName }: Props) {
   return (
     <div
@@ -27,7 +29,17 @@ export function Message({ senderType, messageContent, senderName }: Props) {
         )}
         {senderName}
       </p>
-      <p className="text-sm text-gray-100">{messageContent}</p>
+      <p className="text-sm text-gray-100">
+        {messageContent.split(/(@\w+)/g).map((part, index) =>
+          part.startsWith('@') ? (
+            <span key={index} className={tagStyles}>
+              {part}
+            </span>
+          ) : (
+            part
+          )
+        )}
+      </p>
     </div>
   );
 }
