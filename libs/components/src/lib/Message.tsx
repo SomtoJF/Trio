@@ -1,9 +1,9 @@
 import { SenderTypeEnum } from '@trio/types';
-
+import { GiArtificialHive } from 'react-icons/gi';
 interface Props {
   senderType: SenderTypeEnum;
   messageContent: string;
-  senderName: string;
+  senderName?: string;
 }
 
 export function Message({ senderType, messageContent, senderName }: Props) {
@@ -11,14 +11,23 @@ export function Message({ senderType, messageContent, senderName }: Props) {
     <div
       className={`${
         senderType === SenderTypeEnum.USER
-          ? 'bg-green-400 self-end' // Gradient for User
-          : 'self-start bg-gray-100'
-      } text-black rounded-md px-4 py-2 max-w-[80%] shadow-md`}
+          ? 'text-white text-xs text-left bg-neutral-800 self-end' // Gradient for User
+          : 'self-start text-white'
+      } text-black rounded-xl p-2 max-w-full sm:max-w-[80%] shadow-md`}
     >
-      <p className="text-xs font-semibold uppercase text-gray-600">
-        {senderType === SenderTypeEnum.USER ? 'Me' : senderName}
+      <p
+        className={`${
+          senderType === SenderTypeEnum.USER
+            ? '' // Gradient for User
+            : 'text-xs flex gap-1 items-center'
+        } text-xs font-semibold mb-1 text-gray-200`}
+      >
+        {senderType === SenderTypeEnum.AGENT && (
+          <GiArtificialHive className="text-base" />
+        )}
+        {senderName}
       </p>
-      <p className="text-sm">{messageContent}</p>
+      <p className="text-sm text-gray-100">{messageContent}</p>
     </div>
   );
 }

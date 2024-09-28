@@ -64,6 +64,7 @@ func main() {
 		chats := authenticated.Group("/chats")
 		{
 			chats.POST("", controllers.CreateChat)
+			chats.GET("", controllers.GetUserChats)
 			chats.GET("/:chatId", controllers.GetChatInfo)
 			chats.DELETE("/:chatId", controllers.DeleteChat)
 			chats.PUT("/:chatId", controllers.UpdateChat)
@@ -75,7 +76,6 @@ func main() {
 		user := authenticated.Group("/me")
 		{
 			user.GET("", controllers.GetCurrentUser)
-			user.GET("/chats", controllers.GetUserChats)
 		}
 
 		// Agent related endpoints
