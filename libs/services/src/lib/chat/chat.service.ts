@@ -51,3 +51,21 @@ export async function addMessageToChat(chatId: string, message: string) {
   const result = await res.json();
   return result;
 }
+
+export async function updateChat(
+  chatId: string,
+  data: {
+    chatName: string;
+    agents: { name: string; lingo: string; traits: string[] }[];
+  }
+) {
+  const res = await fetch(`${BaseRoute}/${Route.Chats.Default}${chatId}`, {
+    method: 'PUT',
+    credentials: 'include',
+    body: JSON.stringify(data),
+  });
+
+  if (res.status > 299) throw new Error(res.statusText);
+  const result = await res.json();
+  return result.data;
+}

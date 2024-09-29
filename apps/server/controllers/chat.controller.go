@@ -137,7 +137,7 @@ func DeleteChat(c *gin.Context) {
 	c.JSON(http.StatusNoContent, gin.H{"message": "Chat deleted successfully"})
 }
 
-// UpdateChat updates a chat's name
+// UpdateChat updates a chat's name and replaces agents with new ones
 func UpdateChat(c *gin.Context) {
 	chatID, err := uuid.Parse(c.Param("chatId"))
 	if err != nil {
@@ -147,6 +147,12 @@ func UpdateChat(c *gin.Context) {
 
 	var body struct {
 		ChatName string `json:"chatName" binding:"required,max=20"`
+		Agents   []struct {
+			ID     uuid.UUID `json:"id" binding:"required"`
+			Name   string    `json:"name" binding:"required,max=20"`
+			Lingo  string    `json:"lingo" binding:"required,max=20"`
+			Traits []string  `json:"traits" binding:"required"`
+		} `json:"agents" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&body); err != nil {
@@ -172,6 +178,26 @@ func UpdateChat(c *gin.Context) {
 	if err := initializers.DB.Save(&chat).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update chat"})
 		return
+	}
+
+	// Update agents
+	if err := initializers.DB.Model(&chat).Association("Agents").Clear(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear old agents"})
+		return
+	}
+
+	for _, agentData := range body.Agents {
+		agent := models.Agent{
+			Name:   agentData.Name,
+			Lingo:  agentData.Lingo,
+			Traits: agentData.Traits,
+			ChatID: chat.ID,
+		}
+
+		if err := initializers.DB.Create(&agent).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create agent"})
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": chat})

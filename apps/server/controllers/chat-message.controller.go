@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	MAX_TOKENS = 4000 // Adjust based on your needs and model limitations
+	MAX_TOKENS = 4000
 )
 
 func AddMessageToChat(c *gin.Context) {
@@ -156,7 +156,7 @@ func generateAgentResponse(ctx context.Context, client *genai.Client, agent mode
 		Content:    aiResponse,
 		SenderType: string(types.SenderTypeAgent),
 		SenderID:   agent.ID,
-		ChatID:     chatHistory[0].ChatID, // Assuming all messages in history are from the same chat
+		ChatID:     chatHistory[0].ChatID,
 	}, nil
 }
 
