@@ -14,10 +14,7 @@ import (
 	"github.com/somtojf/trio/initializers"
 	"github.com/somtojf/trio/models"
 	"github.com/somtojf/trio/types"
-)
-
-const (
-	MAX_TOKENS = 4000
+	"github.com/somtojf/trio/utils"
 )
 
 func AddMessageToChat(c *gin.Context) {
@@ -49,6 +46,7 @@ func AddMessageToChat(c *gin.Context) {
 		return
 	}
 
+	// TODO: Change this! number of agents shouldn't matter
 	if len(chat.Agents) != 2 {
 		c.JSON(http.StatusFailedDependency, gin.H{"error": "Chat must have exactly two agents"})
 		return
@@ -74,28 +72,28 @@ func AddMessageToChat(c *gin.Context) {
 	}
 
 	// Get chat history
-	chatHistory, err := getChatHistory(chat.ID, MAX_TOKENS)
+	chatHistory, err := utils.GetChatHistory(chat.ID, utils.MAX_TOKENS)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve chat history"})
 		return
 	}
 
 	// Randomize agent response order
-	firstAgent, secondAgent := randomizeAgents(chat.Agents)
+	shuffledAgents := utils.RandomizeArrayElements(chat.Agents)
 
 	// Generate responses
-	firstResponse, err := generateAgentResponse(c.Request.Context(), client, firstAgent, chatHistory, body.Content, userModel.Username, secondAgent)
+	firstResponse, err := generateAgentResponse(c.Request.Context(), client, shuffledAgents[0], chatHistory, body.Content, userModel.Username, shuffledAgents[1])
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to generate response for %s", firstAgent.Name)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to generate response for %s", shuffledAgents[0].Name)})
 		return
 	}
 
 	// Add first agent's response to chat history
 	chatHistory = append(chatHistory, firstResponse)
 
-	secondResponse, err := generateAgentResponse(c.Request.Context(), client, secondAgent, chatHistory, body.Content, userModel.Username, firstAgent)
+	secondResponse, err := generateAgentResponse(c.Request.Context(), client, shuffledAgents[1], chatHistory, body.Content, userModel.Username, shuffledAgents[0])
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to generate response for %s", secondAgent.Name)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to generate response for %s", shuffledAgents[1].Name)})
 		return
 	}
 
@@ -109,31 +107,6 @@ func AddMessageToChat(c *gin.Context) {
 		"requestPrompt": userMessage,
 		"data":          []models.Message{firstResponse, secondResponse},
 	})
-}
-
-func getChatHistory(chatID uint, maxTokens int) ([]models.Message, error) {
-	var messages []models.Message
-	err := initializers.DB.Where("chat_id = ?", chatID).Order("created_at DESC").Find(&messages).Error
-	if err != nil {
-		return nil, err
-	}
-
-	// Reverse the order to get chronological order
-	for i := len(messages)/2 - 1; i >= 0; i-- {
-		opp := len(messages) - 1 - i
-		messages[i], messages[opp] = messages[opp], messages[i]
-	}
-
-	// TODO: Implement token counting and truncation logic here
-	// For now, we'll just return all messages
-	return messages, nil
-}
-
-func randomizeAgents(agents []models.Agent) (models.Agent, models.Agent) {
-	if rand.Float32() < 0.5 {
-		return agents[0], agents[1]
-	}
-	return agents[1], agents[0]
 }
 
 func generateAgentResponse(ctx context.Context, client *genai.Client, agent models.Agent, chatHistory []models.Message, userMessage string, userName string, otherAgent models.Agent) (models.Message, error) {
@@ -174,15 +147,7 @@ Use your defined traits to guide your response style and content.
 Engage in a natural, flowing conversation while keeping responses as short as possible, and feel free to ask questions or make observations to keep the dialogue engaging.
 Remember as much context as you can from previous messages and use them when necessary.
 `, agent.Name, strings.Join(agent.Traits, ", "), userName, otherAgent.Name, strings.Join(otherAgent.Traits, ", "),
-		formatChatHistory(chatHistory), userMessage)
-}
-
-func formatChatHistory(history []models.Message) string {
-	var formattedHistory strings.Builder
-	for _, msg := range history {
-		formattedHistory.WriteString(fmt.Sprintf("%s: %s\n", msg.SenderType, msg.Content))
-	}
-	return formattedHistory.String()
+		utils.FormatChatHistory(chatHistory), userMessage)
 }
 
 func saveResponsesToDatabase(responses ...models.Message) error {

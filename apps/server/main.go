@@ -71,6 +71,7 @@ func main() {
 			chats.POST("/:chatId/messages", controllers.AddMessageToChat)
 			chats.POST("/:chatId/agents", controllers.AddAgentToChat)
 			chats.POST("/create-with-agents", controllers.CreateChatWithAgents)
+			chats.POST("/:chatId/messages/reflection", controllers.PostReflectionMessage)
 		}
 
 		user := authenticated.Group("/me")
