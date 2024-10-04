@@ -53,7 +53,6 @@ func PostReflectionMessage(c *gin.Context) {
 		return
 	}
 
-	// Create and save the user's message
 	userMessage := models.Message{
 		Content:    body.Content,
 		SenderType: string(types.SenderTypeUser),
@@ -74,13 +73,11 @@ func PostReflectionMessage(c *gin.Context) {
 
 	shuffledAgents := utils.RandomizeArrayElements(chat.Agents)
 
-	// Set headers for SSE
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
 	c.Writer.Header().Set("Cache-Control", "no-cache")
 	c.Writer.Header().Set("Connection", "keep-alive")
 	c.Writer.Header().Set("Transfer-Encoding", "chunked")
 
-	// Create channels for agent responses and control
 	responseChan := make(chan AgentResponse, len(shuffledAgents))
 	doneChan := make(chan struct{})
 
@@ -92,7 +89,6 @@ func PostReflectionMessage(c *gin.Context) {
 		select {
 		case response, ok := <-responseChan:
 			if !ok {
-				// Channel closed, exit the loop
 				return
 			}
 			data, err := json.Marshal(response)
@@ -103,7 +99,6 @@ func PostReflectionMessage(c *gin.Context) {
 			c.SSEvent("message", string(data))
 			c.Writer.Flush()
 		case <-doneChan:
-			// Response loop finished
 			return
 		}
 	}
@@ -125,12 +120,11 @@ func agentResponseLoop(ctx context.Context, client *genai.Client, agents []model
 				Content:   response,
 			}
 
-			// Check for stopping conditions
-			if strings.HasPrefix(response, "agree") || strings.HasSuffix(response, "alternate") || response == "" {
+			if strings.HasPrefix(strings.ToLower(response), "agree") || strings.HasSuffix(strings.ToLower(response), "alternate") || response == "" {
 				return
 			}
 		}
-		// Update chat history with new responses for the next iteration
+
 		for agentID, response := range agentResponses {
 			chatHistory = append(chatHistory, models.Message{
 				Content:    response,
