@@ -1,11 +1,12 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
-	"log"
+	"math/rand"
 	"net/http"
 	"strings"
-	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/generative-ai-go/genai"
@@ -13,10 +14,9 @@ import (
 	"github.com/somtojf/trio/initializers"
 	"github.com/somtojf/trio/models"
 	"github.com/somtojf/trio/types"
-	"gorm.io/gorm"
+	"github.com/somtojf/trio/utils"
 )
 
-// AddMessageToChat adds a new message to a chat
 func AddMessageToChat(c *gin.Context) {
 	chatID, err := uuid.Parse(c.Param("chatId"))
 	if err != nil {
@@ -41,15 +41,13 @@ func AddMessageToChat(c *gin.Context) {
 	userModel := currentUser.(models.User)
 
 	var chat models.Chat
-	if err := initializers.DB.Preload("Agents").Preload("Messages", func(db *gorm.DB) *gorm.DB {
-		return db.Order("created_at DESC").Limit(10)
-	}).First(&chat, "external_id = ? AND user_id = ?", chatID, userModel.ID).Error; err != nil {
+	if err := initializers.DB.Preload("Agents").First(&chat, "external_id = ? AND user_id = ?", chatID, userModel.ID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Chat not found"})
 		return
 	}
 
-	if len(chat.Agents) < 1 {
-		c.JSON(http.StatusFailedDependency, gin.H{"error": "No agents found in the chat"})
+	if len(chat.Agents) == 0 {
+		c.JSON(http.StatusFailedDependency, gin.H{"error": "Chat must have at least one agent"})
 		return
 	}
 
@@ -72,68 +70,93 @@ func AddMessageToChat(c *gin.Context) {
 		return
 	}
 
-	var wg sync.WaitGroup
-	responses := make([]models.Message, len(chat.Agents))
-
-	for i, agent := range chat.Agents {
-		wg.Add(1)
-		go func(i int, agent models.Agent) {
-			defer wg.Done()
-
-			model := client.GenerativeModel("gemini-1.5-flash")
-			cs := model.StartChat()
-
-			// Populate cs.History with the last 10 messages (in chronological order)
-			for j := len(chat.Messages) - 1; j >= 0; j-- {
-				msg := chat.Messages[j]
-				role := "user"
-				if msg.SenderType == string(types.SenderTypeAgent) {
-					role = "model"
-				}
-				cs.History = append(cs.History, &genai.Content{
-					Parts: []genai.Part{
-						genai.Text(msg.Content),
-					},
-					Role: role,
-				})
-			}
-			agentTraits := strings.Join(agent.Traits, ", ")
-
-			prompt := fmt.Sprintf("Respond to this message. {message: %s} using as few or as many traits from this lost of traits {traits: %s} based on our conversation and context. If there's no context respond in a straighforward manner", body.Content, agentTraits)
-
-			res, err := cs.SendMessage(c.Request.Context(), genai.Text(prompt))
-			if err != nil {
-				log.Printf("Error getting response from agent %s: %v", agent.Name, err)
-				return
-			}
-
-			var aiResponse string
-			if len(res.Candidates) > 0 && len(res.Candidates[0].Content.Parts) > 0 {
-				aiResponse = string(res.Candidates[0].Content.Parts[0].(genai.Text))
-			} else {
-				aiResponse = "No response generated"
-			}
-
-			responses[i] = models.Message{
-				Content:    aiResponse,
-				SenderType: string(types.SenderTypeAgent),
-				SenderID:   agent.ID,
-				ChatID:     chat.ID,
-			}
-		}(i, agent)
+	// Get chat history
+	chatHistory, err := utils.GetChatHistory(chat.ID, utils.MAX_TOKENS)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve chat history"})
+		return
 	}
 
-	wg.Wait()
+	shuffledAgents := utils.RandomizeArrayElements(chat.Agents)
 
-	// Save AI responses to the database
-	for _, response := range responses {
-		if err := initializers.DB.Create(&response).Error; err != nil {
-			log.Printf("Error saving AI response to database: %v", err)
+	var agentResponses []models.Message
+
+	// Generate responses
+	for i, agent := range shuffledAgents {
+		var otherAgent models.Agent
+		if i+1 < len(shuffledAgents) {
+			otherAgent = shuffledAgents[i+1]
+		} else if len(shuffledAgents) > 1 {
+			otherAgent = shuffledAgents[0]
 		}
+
+		response, err := generateAgentResponse(c.Request.Context(), client, agent, chatHistory, body.Content, userModel.Username, otherAgent)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to generate response for %s", agent.Name)})
+			return
+		}
+
+		agentResponses = append(agentResponses, response)
+		chatHistory = append(chatHistory, response)
+	}
+
+	// Save responses to database
+	if err := saveResponsesToDatabase(agentResponses...); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save agent responses"})
+		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
 		"requestPrompt": userMessage,
-		"data":          responses,
+		"data":          agentResponses,
 	})
+}
+
+func generateAgentResponse(ctx context.Context, client *genai.Client, agent models.Agent, chatHistory []models.Message, userMessage string, userName string, otherAgent models.Agent) (models.Message, error) {
+	model := client.GenerativeModel("gemini-1.5-flash")
+	prompt := createEnhancedPrompt(agent, chatHistory, userMessage, userName, otherAgent)
+
+	res, err := model.GenerateContent(ctx, genai.Text(prompt))
+	if err != nil {
+		return models.Message{}, err
+	}
+
+	var aiResponse string
+	if len(res.Candidates) > 0 && len(res.Candidates[0].Content.Parts) > 0 {
+		aiResponse = string(res.Candidates[0].Content.Parts[0].(genai.Text))
+	} else {
+		aiResponse = "No response generated"
+	}
+
+	return models.Message{
+		Content:    aiResponse,
+		SenderType: string(types.SenderTypeAgent),
+		SenderID:   agent.ID,
+		ChatID:     chatHistory[0].ChatID,
+	}, nil
+}
+
+func createEnhancedPrompt(agent models.Agent, chatHistory []models.Message, userMessage string, userName string, otherAgent models.Agent) string {
+	return fmt.Sprintf(`
+You are %s, an AI agent with the following traits: %s.
+You are in a group chat with a human user called %s and another AI agent named %s with traits: %s.
+Chat History:
+%s
+
+The user's latest message is: "%s" 
+
+Please respond to the user's message and, if appropriate, to the other agent's previous message. Refer to them as @<targetname>.
+Use your defined traits to guide your response style and content.
+Engage in a natural, flowing conversation while keeping responses as short as possible, and feel free to ask questions or make observations to keep the dialogue engaging.
+Remember as much context as you can from previous messages and use them when necessary.
+`, agent.Name, strings.Join(agent.Traits, ", "), userName, otherAgent.Name, strings.Join(otherAgent.Traits, ", "),
+		utils.FormatChatHistory(chatHistory), userMessage)
+}
+
+func saveResponsesToDatabase(responses ...models.Message) error {
+	return initializers.DB.Create(&responses).Error
+}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
 }

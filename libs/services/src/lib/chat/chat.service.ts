@@ -18,7 +18,7 @@ export async function createChatWithAgents(data: Data) {
 }
 
 export async function currentUserChats(): Promise<Chat[]> {
-  const res = await fetch(`${BaseRoute}/${Route.CurrentUser.Chats}`, {
+  const res = await fetch(`${BaseRoute}/chats`, {
     method: 'GET',
     credentials: 'include',
   });
@@ -35,4 +35,37 @@ export async function getOneChat(id: string): Promise<Chat> {
   if (res.status > 299) throw new Error(res.statusText);
   const result = await res.json();
   return result.data as Chat;
+}
+
+export async function addMessageToChat(chatId: string, message: string) {
+  const data = { content: message };
+  const res = await fetch(
+    `${BaseRoute}/${Route.Chats.Default}${chatId}/messages`,
+    {
+      method: 'POST',
+      credentials: 'include',
+      body: JSON.stringify(data),
+    }
+  );
+  const result = await res.json();
+  if (res.status > 299) throw new Error(result.error ?? res.statusText);
+  return result;
+}
+
+export async function updateChat(
+  chatId: string,
+  data: {
+    chatName: string;
+    agents: { name: string; lingo: string; traits: string[] }[];
+  }
+) {
+  const res = await fetch(`${BaseRoute}/${Route.Chats.Default}${chatId}`, {
+    method: 'PUT',
+    credentials: 'include',
+    body: JSON.stringify(data),
+  });
+
+  const result = await res.json();
+  if (res.status > 299) throw new Error(result.error ?? res.statusText);
+  return result.data;
 }

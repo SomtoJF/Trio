@@ -47,8 +47,6 @@ func CheckAuth() gin.HandlerFunc {
 			return
 		}
 
-		fmt.Println(claims["id"], "idddddbsklskddkskbksb sk k s dhsbhdbsbhbdbsbdbsbd sdb s hdsdbhsdbsjbdkhsbhsbkdh")
-
 		var user models.User
 		result := initializers.DB.Where("external_id = ?", claims["id"]).First(&user)
 		if result.Error != nil {
