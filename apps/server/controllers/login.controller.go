@@ -54,6 +54,6 @@ func Login(c *gin.Context) {
 	c.SetCookie("Access_Token", token, 604800, "/", domain, false, true)
 
 	c.JSON(200, gin.H{
-		"message": token,
+		"message": "success",
 	})
 }
