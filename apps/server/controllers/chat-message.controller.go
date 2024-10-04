@@ -46,9 +46,8 @@ func AddMessageToChat(c *gin.Context) {
 		return
 	}
 
-	// TODO: Change this! number of agents shouldn't matter
-	if len(chat.Agents) != 2 {
-		c.JSON(http.StatusFailedDependency, gin.H{"error": "Chat must have exactly two agents"})
+	if len(chat.Agents) == 0 {
+		c.JSON(http.StatusFailedDependency, gin.H{"error": "Chat must have at least one agent"})
 		return
 	}
 
@@ -78,34 +77,38 @@ func AddMessageToChat(c *gin.Context) {
 		return
 	}
 
-	// Randomize agent response order
 	shuffledAgents := utils.RandomizeArrayElements(chat.Agents)
 
+	var agentResponses []models.Message
+
 	// Generate responses
-	firstResponse, err := generateAgentResponse(c.Request.Context(), client, shuffledAgents[0], chatHistory, body.Content, userModel.Username, shuffledAgents[1])
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to generate response for %s", shuffledAgents[0].Name)})
-		return
-	}
+	for i, agent := range shuffledAgents {
+		var otherAgent models.Agent
+		if i+1 < len(shuffledAgents) {
+			otherAgent = shuffledAgents[i+1]
+		} else if len(shuffledAgents) > 1 {
+			otherAgent = shuffledAgents[0]
+		}
 
-	// Add first agent's response to chat history
-	chatHistory = append(chatHistory, firstResponse)
+		response, err := generateAgentResponse(c.Request.Context(), client, agent, chatHistory, body.Content, userModel.Username, otherAgent)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to generate response for %s", agent.Name)})
+			return
+		}
 
-	secondResponse, err := generateAgentResponse(c.Request.Context(), client, shuffledAgents[1], chatHistory, body.Content, userModel.Username, shuffledAgents[0])
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to generate response for %s", shuffledAgents[1].Name)})
-		return
+		agentResponses = append(agentResponses, response)
+		chatHistory = append(chatHistory, response)
 	}
 
 	// Save responses to database
-	if err := saveResponsesToDatabase(firstResponse, secondResponse); err != nil {
+	if err := saveResponsesToDatabase(agentResponses...); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save agent responses"})
 		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
 		"requestPrompt": userMessage,
-		"data":          []models.Message{firstResponse, secondResponse},
+		"data":          agentResponses,
 	})
 }
 

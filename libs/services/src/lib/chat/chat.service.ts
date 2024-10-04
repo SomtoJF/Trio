@@ -47,8 +47,8 @@ export async function addMessageToChat(chatId: string, message: string) {
       body: JSON.stringify(data),
     }
   );
-  if (res.status > 299) throw new Error(res.statusText);
   const result = await res.json();
+  if (res.status > 299) throw new Error(result.error ?? res.statusText);
   return result;
 }
 
@@ -65,7 +65,7 @@ export async function updateChat(
     body: JSON.stringify(data),
   });
 
-  if (res.status > 299) throw new Error(res.statusText);
   const result = await res.json();
+  if (res.status > 299) throw new Error(result.error ?? res.statusText);
   return result.data;
 }
