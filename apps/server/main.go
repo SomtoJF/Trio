@@ -10,8 +10,12 @@ import (
 	"github.com/google/generative-ai-go/genai"
 	"github.com/somtojf/trio/clients"
 	"github.com/somtojf/trio/controllers"
+
+	docs "github.com/somtojf/trio/docs"
 	"github.com/somtojf/trio/initializers"
 	"github.com/somtojf/trio/middleware"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func init() {
@@ -26,6 +30,14 @@ func SetContext(geminiClient *genai.Client) gin.HandlerFunc {
 	}
 }
 
+// @title			Trio API
+// @Schemes
+// @version		1.0
+// @description	Trio API Server
+// @contact.name	Somtochukwu Francis
+// @contact.email	somtofrancis5@gmail.com
+// @host		localhost:4000
+// @BasePath	/
 func main() {
 	r := gin.Default()
 	clientAddress := os.Getenv("CLIENT_ADDRESS")
@@ -44,6 +56,10 @@ func main() {
 
 	r.Use(cors.New(config))
 	r.Use(SetContext(geminiClient))
+
+	docs.SwaggerInfo.BasePath = "/"
+
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	public := r.Group("/")
 	{

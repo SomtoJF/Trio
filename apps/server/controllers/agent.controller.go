@@ -10,7 +10,23 @@ import (
 	"gorm.io/gorm"
 )
 
-// DeleteAgent deletes an agent
+type updateAgentInput struct {
+	Name   string   `json:"name" binding:"required,max=20"`
+	Lingo  string   `json:"lingo" binding:"required,max=20"`
+	Traits []string `json:"traits" binding:"required"`
+}
+
+// DeleteAgent godoc
+//	@Summary		Delete an agent
+//	@Description	Deletes an agent for the authenticated user
+//	@Tags			agents
+//	@Param			agentId	path		string					true	"Agent ID"
+//	@Success		200		{object}	map[string]interface{}	"Agent deleted successfully"
+//	@Failure		400		{object}	map[string]interface{}	"Bad request"
+//	@Failure		401		{object}	map[string]interface{}	"Unauthorized"
+//	@Failure		404		{object}	map[string]interface{}	"Agent not found"
+//	@Failure		500		{object}	map[string]interface{}	"Internal server error"
+//	@Router			/agents/{agentId} [delete]
 func DeleteAgent(c *gin.Context) {
 	agentID, err := uuid.Parse(c.Param("agentId"))
 	if err != nil {
@@ -45,7 +61,17 @@ func DeleteAgent(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Agent deleted successfully"})
 }
 
-// GetAgent retrieves an agent's details
+// GetAgent godoc
+//	@Summary		Get agent details
+//	@Description	Retrieves an agent's details for the authenticated user
+//	@Tags			agents
+//	@Param			agentId	path		string					true	"Agent ID"
+//	@Success		200		{object}	map[string]interface{}	"Agent details"
+//	@Failure		400		{object}	map[string]interface{}	"Bad request"
+//	@Failure		401		{object}	map[string]interface{}	"Unauthorized"
+//	@Failure		404		{object}	map[string]interface{}	"Agent not found"
+//	@Failure		500		{object}	map[string]interface{}	"Internal server error"
+//	@Router			/agents/{agentId} [get]
 func GetAgent(c *gin.Context) {
 	agentID, err := uuid.Parse(c.Param("agentId"))
 	if err != nil {
@@ -75,7 +101,18 @@ func GetAgent(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"agent": agent})
 }
 
-// UpdateAgent updates an agent's details
+// UpdateAgent godoc
+//	@Summary		Update an agent's details
+//	@Description	Updates an agent's details for the authenticated user
+//	@Tags			agents
+//	@Param			agentId		path		string					true	"Agent ID"
+//	@Param			agentInput	body		updateAgentInput		true	"Agent details"
+//	@Success		200			{object}	map[string]interface{}	"Updated agent"
+//	@Failure		400			{object}	map[string]interface{}	"Bad request"
+//	@Failure		401			{object}	map[string]interface{}	"Unauthorized"
+//	@Failure		404			{object}	map[string]interface{}	"Agent not found"
+//	@Failure		500			{object}	map[string]interface{}	"Internal server error"
+//	@Router			/agents/{agentId} [put]
 func UpdateAgent(c *gin.Context) {
 	agentID, err := uuid.Parse(c.Param("agentId"))
 	if err != nil {
@@ -83,11 +120,7 @@ func UpdateAgent(c *gin.Context) {
 		return
 	}
 
-	var body struct {
-		Name   string   `json:"name" binding:"required,max=20"`
-		Lingo  string   `json:"lingo" binding:"required,max=20"`
-		Traits []string `json:"traits" binding:"required"`
-	}
+	var body updateAgentInput
 
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

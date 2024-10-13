@@ -1,0 +1,849 @@
+basePath: /
+definitions:
+  controllers.addAgentToChatInput:
+    properties:
+      lingo:
+        maxLength: 20
+        type: string
+      name:
+        maxLength: 20
+        type: string
+      traits:
+        items:
+          type: string
+        type: array
+    required:
+    - lingo
+    - name
+    - traits
+    type: object
+  controllers.addMessageToChatInput:
+    properties:
+      content:
+        type: string
+    required:
+    - content
+    type: object
+  controllers.createChatInput:
+    properties:
+      chatName:
+        maxLength: 20
+        type: string
+    required:
+    - chatName
+    type: object
+  controllers.createChatWithAgentsInput:
+    properties:
+      agents:
+        items:
+          properties:
+            lingo:
+              maxLength: 20
+              type: string
+            name:
+              maxLength: 20
+              type: string
+            traits:
+              items:
+                type: string
+              type: array
+          required:
+          - lingo
+          - name
+          - traits
+          type: object
+        type: array
+      chatName:
+        maxLength: 20
+        type: string
+    required:
+    - agents
+    - chatName
+    type: object
+  controllers.loginInput:
+    properties:
+      password:
+        maxLength: 20
+        minLength: 8
+        type: string
+      userName:
+        maxLength: 20
+        type: string
+    required:
+    - password
+    - userName
+    type: object
+  controllers.passwordResetRequest:
+    properties:
+      newPassword:
+        maxLength: 20
+        type: string
+      password:
+        maxLength: 20
+        type: string
+    required:
+    - newPassword
+    - password
+    type: object
+  controllers.reflectionMessageInput:
+    properties:
+      content:
+        type: string
+    required:
+    - content
+    type: object
+  controllers.signUpInput:
+    properties:
+      fullName:
+        maxLength: 50
+        type: string
+      password:
+        maxLength: 20
+        minLength: 8
+        type: string
+      userName:
+        maxLength: 20
+        type: string
+    required:
+    - fullName
+    - password
+    - userName
+    type: object
+  controllers.updateAgentInput:
+    properties:
+      lingo:
+        maxLength: 20
+        type: string
+      name:
+        maxLength: 20
+        type: string
+      traits:
+        items:
+          type: string
+        type: array
+    required:
+    - lingo
+    - name
+    - traits
+    type: object
+  controllers.updateChatInput:
+    properties:
+      agents:
+        items:
+          properties:
+            id:
+              type: string
+            lingo:
+              maxLength: 20
+              type: string
+            name:
+              maxLength: 20
+              type: string
+            traits:
+              items:
+                type: string
+              type: array
+          required:
+          - id
+          - lingo
+          - name
+          - traits
+          type: object
+        type: array
+      chatName:
+        maxLength: 20
+        type: string
+    required:
+    - agents
+    - chatName
+    type: object
+  gorm.DeletedAt:
+    properties:
+      time:
+        type: string
+      valid:
+        description: Valid is true if Time is not NULL
+        type: boolean
+    type: object
+  models.Agent:
+    properties:
+      id:
+        type: string
+      lingo:
+        type: string
+      name:
+        type: string
+      traits:
+        items:
+          type: string
+        type: array
+    type: object
+  models.Chat:
+    properties:
+      agents:
+        items:
+          $ref: '#/definitions/models.Agent'
+        type: array
+      chatName:
+        type: string
+      id:
+        type: string
+      messages:
+        items:
+          $ref: '#/definitions/models.Message'
+        type: array
+    type: object
+  models.Message:
+    properties:
+      _:
+        type: integer
+      content:
+        type: string
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: string
+      senderType:
+        description: User or Agent
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  models.User:
+    properties:
+      chats:
+        items:
+          $ref: '#/definitions/models.Chat'
+        type: array
+      fullName:
+        type: string
+      id:
+        type: string
+      userName:
+        type: string
+    type: object
+host: localhost:4000
+info:
+  contact:
+    email: somtofrancis5@gmail.com
+    name: Somtochukwu Francis
+  description: Trio API Server
+  title: Trio API
+  version: "1.0"
+paths:
+  /agents/{agentId}:
+    delete:
+      description: Deletes an agent for the authenticated user
+      parameters:
+      - description: Agent ID
+        in: path
+        name: agentId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Agent deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Agent not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete an agent
+      tags:
+      - agents
+    get:
+      description: Retrieves an agent's details for the authenticated user
+      parameters:
+      - description: Agent ID
+        in: path
+        name: agentId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Agent details
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Agent not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get agent details
+      tags:
+      - agents
+    put:
+      description: Updates an agent's details for the authenticated user
+      parameters:
+      - description: Agent ID
+        in: path
+        name: agentId
+        required: true
+        type: string
+      - description: Agent details
+        in: body
+        name: agentInput
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.updateAgentInput'
+      responses:
+        "200":
+          description: Updated agent
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Agent not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update an agent's details
+      tags:
+      - agents
+  /chats:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new chat for the authenticated user
+      parameters:
+      - description: Chat name
+        in: body
+        name: chatName
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.createChatInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created chat
+          schema:
+            $ref: '#/definitions/models.Chat'
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create a new chat
+      tags:
+      - chats
+  /chats/{chatId}:
+    delete:
+      description: Deletes a chat for the authenticated user
+      parameters:
+      - description: Chat ID
+        in: path
+        name: chatId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Chat deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Chat not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete a chat
+      tags:
+      - chats
+    get:
+      description: Retrieves chat information including its agents and messages with
+        sender details
+      parameters:
+      - description: Chat ID
+        in: path
+        name: chatId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Chat information
+          schema:
+            $ref: '#/definitions/models.Chat'
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Chat not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get chat information
+      tags:
+      - chats
+    put:
+      consumes:
+      - application/json
+      description: Updates a chat's name and replaces agents with new ones
+      parameters:
+      - description: Chat ID
+        in: path
+        name: chatId
+        required: true
+        type: string
+      - description: Chat details
+        in: body
+        name: chatInput
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.updateChatInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated chat
+          schema:
+            $ref: '#/definitions/models.Chat'
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Chat not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update a chat
+      tags:
+      - chats
+  /chats/{chatId}/agents:
+    post:
+      consumes:
+      - application/json
+      description: Adds an agent to a chat (max 2 agents per chat)
+      parameters:
+      - description: Chat ID
+        in: path
+        name: chatId
+        required: true
+        type: string
+      - description: Agent details
+        in: body
+        name: agentInput
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.addAgentToChatInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created agent
+          schema:
+            $ref: '#/definitions/models.Agent'
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Chat not found
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Add an agent to a chat
+      tags:
+      - chats
+  /chats/{chatId}/messages:
+    post:
+      consumes:
+      - application/json
+      description: Adds a message to a chat for the authenticated user
+      parameters:
+      - description: Chat ID
+        in: path
+        name: chatId
+        required: true
+        type: string
+      - description: Message content
+        in: body
+        name: messageInput
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.addMessageToChatInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Message added successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Chat not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Add a message to a chat
+      tags:
+      - chat-messages
+  /chats/{chatId}/messages/reflection:
+    post:
+      consumes:
+      - application/json
+      description: Adds a reflection message to a chat for the authenticated user
+      parameters:
+      - description: Chat ID
+        in: path
+        name: chatId
+        required: true
+        type: string
+      - description: Message content
+        in: body
+        name: messageInput
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.reflectionMessageInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Reflection message added successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Chat not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Post a reflection message
+      tags:
+      - chat-messages
+  /chats/create-with-agents:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new chat with agents for the authenticated user
+      parameters:
+      - description: Chat and agents details
+        in: body
+        name: chatInput
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.createChatWithAgentsInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created chat with agents
+          schema:
+            $ref: '#/definitions/models.Chat'
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create a new chat with agents
+      tags:
+      - chats
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Logs in a user and returns an access token
+      parameters:
+      - description: Login credentials
+        in: body
+        name: loginInput
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.loginInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success message
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: error message
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Login user
+      tags:
+      - auth
+  /logout:
+    post:
+      description: Logs out the user by clearing the access token
+      responses:
+        "200":
+          description: Logout successful
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Logout user
+      tags:
+      - auth
+  /me:
+    get:
+      description: Retrieves the current authenticated user's information
+      responses:
+        "200":
+          description: Current user data
+          schema:
+            $ref: '#/definitions/models.User'
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get current user
+      tags:
+      - users
+  /me/chats:
+    get:
+      description: Retrieves all chats for the authenticated user
+      responses:
+        "200":
+          description: User chats
+          schema:
+            items:
+              $ref: '#/definitions/models.Chat'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get user chats
+      tags:
+      - users
+  /reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Resets the password for the authenticated user
+      parameters:
+      - description: Password reset details
+        in: body
+        name: passwordResetRequest
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.passwordResetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Password updated successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Reset user password
+      tags:
+      - auth
+  /signup:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user account
+      parameters:
+      - description: User details
+        in: body
+        name: userInput
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.signUpInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Account created successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Signup a new user
+      tags:
+      - auth
+schemes:
+- ""
+swagger: "2.0"

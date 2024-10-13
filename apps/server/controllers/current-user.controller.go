@@ -8,6 +8,13 @@ import (
 	"github.com/somtojf/trio/models"
 )
 
+// GetCurrentUser godoc
+//	@Summary		Get current user
+//	@Description	Retrieves the current authenticated user's information
+//	@Tags			users
+//	@Success		200	{object}	models.User				"Current user data"
+//	@Failure		500	{object}	map[string]interface{}	"Internal server error"
+//	@Router			/me [get]
 func GetCurrentUser(c *gin.Context) {
 	user := c.Value("currentUser")
 	if user == nil {
@@ -17,6 +24,13 @@ func GetCurrentUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": user})
 }
 
+// GetUserChats godoc
+//	@Summary		Get user chats
+//	@Description	Retrieves all chats for the authenticated user
+//	@Tags			users
+//	@Success		200	{array}		models.Chat				"User chats"
+//	@Failure		500	{object}	map[string]interface{}	"Internal server error"
+//	@Router			/me/chats [get]
 func GetUserChats(c *gin.Context) {
 	user := c.Value("currentUser").(models.User)
 	var chats []models.Chat

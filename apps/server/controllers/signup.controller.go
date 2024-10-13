@@ -15,6 +15,17 @@ type signUpInput struct {
 	Password string `json:"password" binding:"required,max=20,min=8"`
 }
 
+// Signup godoc
+//	@Summary		Signup a new user
+//	@Description	Creates a new user account
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			userInput	body		signUpInput				true	"User details"
+//	@Success		201			{object}	map[string]interface{}	"Account created successfully"
+//	@Failure		400			{object}	map[string]interface{}	"Bad request"
+//	@Failure		500			{object}	map[string]interface{}	"Internal server error"
+//	@Router			/signup [post]
 func Signup(c *gin.Context) {
 	var body signUpInput
 

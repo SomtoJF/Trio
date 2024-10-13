@@ -17,6 +17,17 @@ type loginInput struct {
 	Password string `json:"password" binding:"required,max=20,min=8"`
 }
 
+// Login godoc
+//	@Summary		Login user
+//	@Description	Logs in a user and returns an access token
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			loginInput	body		loginInput				true	"Login credentials"
+//	@Success		200			{object}	map[string]interface{}	"success message"
+//	@Failure		400			{object}	map[string]interface{}	"error message"
+//	@Failure		500			{object}	map[string]interface{}	"internal server error"
+//	@Router			/login [post]
 func Login(c *gin.Context) {
 	domain := os.Getenv("DOMAIN")
 	var body loginInput

@@ -15,6 +15,18 @@ type passwordResetRequest struct {
 	NewPassword string `json:"newPassword" binding:"required,max=20"`
 }
 
+// ResetPassword godoc
+//	@Summary		Reset user password
+//	@Description	Resets the password for the authenticated user
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			passwordResetRequest	body		passwordResetRequest	true	"Password reset details"
+//	@Success		200						{object}	map[string]interface{}	"Password updated successfully"
+//	@Failure		400						{object}	map[string]interface{}	"Bad request"
+//	@Failure		401						{object}	map[string]interface{}	"Unauthorized"
+//	@Failure		500						{object}	map[string]interface{}	"Internal server error"
+//	@Router			/reset-password [post]
 func ResetPassword(c *gin.Context) {
 	var body passwordResetRequest
 

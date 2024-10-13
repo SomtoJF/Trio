@@ -11,11 +11,50 @@ import (
 	"gorm.io/gorm"
 )
 
-// CreateChat creates a new chat for the authenticated user
+type createChatInput struct {
+	ChatName string `json:"chatName" binding:"required,max=20"`
+}
+
+type addAgentToChatInput struct {
+	Name   string   `json:"name" binding:"required,max=20"`
+	Lingo  string   `json:"lingo" binding:"required,max=20"`
+	Traits []string `json:"traits" binding:"required"`
+}
+
+type updateChatInput struct {
+	ChatName string `json:"chatName" binding:"required,max=20"`
+	Agents   []struct {
+		ID     uuid.UUID `json:"id" binding:"required"`
+		Name   string    `json:"name" binding:"required,max=20"`
+		Lingo  string    `json:"lingo" binding:"required,max=20"`
+		Traits []string  `json:"traits" binding:"required"`
+	} `json:"agents" binding:"required"`
+}
+
+type createChatWithAgentsInput struct {
+	ChatName string `json:"chatName" binding:"required,max=20"`
+	Agents   []struct {
+		Name   string   `json:"name" binding:"required,max=20"`
+		Lingo  string   `json:"lingo" binding:"required,max=20"`
+		Traits []string `json:"traits" binding:"required"`
+	} `json:"agents" binding:"required"`
+}
+
+// CreateChat godoc
+//
+//	@Summary		Create a new chat
+//	@Description	Creates a new chat for the authenticated user
+//	@Tags			chats
+//	@Accept			json
+//	@Produce		json
+//	@Param			chatName	body		createChatInput			true	"Chat name"
+//	@Success		201			{object}	models.Chat				"Created chat"
+//	@Failure		400			{object}	map[string]interface{}	"Bad request"
+//	@Failure		401			{object}	map[string]interface{}	"Unauthorized"
+//	@Failure		500			{object}	map[string]interface{}	"Internal server error"
+//	@Router			/chats [post]
 func CreateChat(c *gin.Context) {
-	var body struct {
-		ChatName string `json:"chatName" binding:"required,max=20"`
-	}
+	var body createChatInput
 
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -43,7 +82,22 @@ func CreateChat(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"data": chat})
 }
 
-// AddAgentToChat adds an agent to a chat (max 2 agents per chat)
+// AddAgentToChat godoc
+//
+//	@Summary		Add an agent to a chat
+//	@Description	Adds an agent to a chat (max 2 agents per chat)
+//	@Tags			chats
+//	@Accept			json
+//	@Produce		json
+//	@Param			chatId		path		string					true	"Chat ID"
+//	@Param			agentInput	body		addAgentToChatInput		true	"Agent details"
+//	@Success		201			{object}	models.Agent			"Created agent"
+//	@Failure		400			{object}	map[string]interface{}	"Bad request"
+//	@Failure		401			{object}	map[string]interface{}	"Unauthorized"
+//	@Failure		404			{object}	map[string]interface{}	"Chat not found"
+//	@Failure		409			{object}	map[string]interface{}	"Conflict"
+//	@Failure		500			{object}	map[string]interface{}	"Internal server error"
+//	@Router			/chats/{chatId}/agents [post]
 func AddAgentToChat(c *gin.Context) {
 	chatID, err := uuid.Parse(c.Param("chatId"))
 	if err != nil {
@@ -51,11 +105,7 @@ func AddAgentToChat(c *gin.Context) {
 		return
 	}
 
-	var body struct {
-		Name   string   `json:"name" binding:"required,max=20"`
-		Lingo  string   `json:"lingo" binding:"required,max=20"`
-		Traits []string `json:"traits" binding:"required"`
-	}
+	var body addAgentToChatInput
 
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -108,7 +158,18 @@ func AddAgentToChat(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"data": agent})
 }
 
-// DeleteChat deletes a chat
+// DeleteChat godoc
+//
+//	@Summary		Delete a chat
+//	@Description	Deletes a chat for the authenticated user
+//	@Tags			chats
+//	@Param			chatId	path		string					true	"Chat ID"
+//	@Success		204		{object}	map[string]interface{}	"Chat deleted successfully"
+//	@Failure		400		{object}	map[string]interface{}	"Bad request"
+//	@Failure		401		{object}	map[string]interface{}	"Unauthorized"
+//	@Failure		404		{object}	map[string]interface{}	"Chat not found"
+//	@Failure		500		{object}	map[string]interface{}	"Internal server error"
+//	@Router			/chats/{chatId} [delete]
 func DeleteChat(c *gin.Context) {
 	chatID, err := uuid.Parse(c.Param("chatId"))
 	if err != nil {
@@ -137,7 +198,21 @@ func DeleteChat(c *gin.Context) {
 	c.JSON(http.StatusNoContent, gin.H{"message": "Chat deleted successfully"})
 }
 
-// UpdateChat updates a chat's name and replaces agents with new ones
+// UpdateChat godoc
+//
+//	@Summary		Update a chat
+//	@Description	Updates a chat's name and replaces agents with new ones
+//	@Tags			chats
+//	@Accept			json
+//	@Produce		json
+//	@Param			chatId		path		string					true	"Chat ID"
+//	@Param			chatInput	body		updateChatInput			true	"Chat details"
+//	@Success		200			{object}	models.Chat				"Updated chat"
+//	@Failure		400			{object}	map[string]interface{}	"Bad request"
+//	@Failure		401			{object}	map[string]interface{}	"Unauthorized"
+//	@Failure		404			{object}	map[string]interface{}	"Chat not found"
+//	@Failure		500			{object}	map[string]interface{}	"Internal server error"
+//	@Router			/chats/{chatId} [put]
 func UpdateChat(c *gin.Context) {
 	chatID, err := uuid.Parse(c.Param("chatId"))
 	if err != nil {
@@ -145,15 +220,7 @@ func UpdateChat(c *gin.Context) {
 		return
 	}
 
-	var body struct {
-		ChatName string `json:"chatName" binding:"required,max=20"`
-		Agents   []struct {
-			ID     uuid.UUID `json:"id" binding:"required"`
-			Name   string    `json:"name" binding:"required,max=20"`
-			Lingo  string    `json:"lingo" binding:"required,max=20"`
-			Traits []string  `json:"traits" binding:"required"`
-		} `json:"agents" binding:"required"`
-	}
+	var body updateChatInput
 
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -203,7 +270,18 @@ func UpdateChat(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": chat})
 }
 
-// GetChatInfo retrieves chat information including its agents and messages with sender details
+// GetChatInfo godoc
+//
+//	@Summary		Get chat information
+//	@Description	Retrieves chat information including its agents and messages with sender details
+//	@Tags			chats
+//	@Param			chatId	path		string					true	"Chat ID"
+//	@Success		200		{object}	models.Chat				"Chat information"
+//	@Failure		400		{object}	map[string]interface{}	"Bad request"
+//	@Failure		401		{object}	map[string]interface{}	"Unauthorized"
+//	@Failure		404		{object}	map[string]interface{}	"Chat not found"
+//	@Failure		500		{object}	map[string]interface{}	"Internal server error"
+//	@Router			/chats/{chatId} [get]
 func GetChatInfo(c *gin.Context) {
 	chatID, err := uuid.Parse(c.Param("chatId"))
 	if err != nil {
@@ -285,16 +363,21 @@ func GetChatInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": chatResponse})
 }
 
-// CreateChatWithAgents creates a new chat with agents for the authenticated user
+// CreateChatWithAgents godoc
+//
+//	@Summary		Create a new chat with agents
+//	@Description	Creates a new chat with agents for the authenticated user
+//	@Tags			chats
+//	@Accept			json
+//	@Produce		json
+//	@Param			chatInput	body		createChatWithAgentsInput	true	"Chat and agents details"
+//	@Success		201			{object}	models.Chat					"Created chat with agents"
+//	@Failure		400			{object}	map[string]interface{}		"Bad request"
+//	@Failure		401			{object}	map[string]interface{}		"Unauthorized"
+//	@Failure		500			{object}	map[string]interface{}		"Internal server error"
+//	@Router			/chats/create-with-agents [post]
 func CreateChatWithAgents(c *gin.Context) {
-	var body struct {
-		ChatName string `json:"chatName" binding:"required,max=20"`
-		Agents   []struct {
-			Name   string   `json:"name" binding:"required,max=20"`
-			Lingo  string   `json:"lingo" binding:"required,max=20"`
-			Traits []string `json:"traits" binding:"required"`
-		} `json:"agents" binding:"required"`
-	}
+	var body createChatWithAgentsInput
 
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

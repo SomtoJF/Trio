@@ -17,6 +17,24 @@ import (
 	"github.com/somtojf/trio/utils"
 )
 
+type addMessageToChatInput struct {
+	Content string `json:"content" binding:"required"`
+}
+
+// AddMessageToChat godoc
+//	@Summary		Add a message to a chat
+//	@Description	Adds a message to a chat for the authenticated user
+//	@Tags			chat-messages
+//	@Accept			json
+//	@Produce		json
+//	@Param			chatId			path		string					true	"Chat ID"
+//	@Param			messageInput	body		addMessageToChatInput	true	"Message content"
+//	@Success		201				{object}	map[string]interface{}	"Message added successfully"
+//	@Failure		400				{object}	map[string]interface{}	"Bad request"
+//	@Failure		401				{object}	map[string]interface{}	"Unauthorized"
+//	@Failure		404				{object}	map[string]interface{}	"Chat not found"
+//	@Failure		500				{object}	map[string]interface{}	"Internal server error"
+//	@Router			/chats/{chatId}/messages [post]
 func AddMessageToChat(c *gin.Context) {
 	chatID, err := uuid.Parse(c.Param("chatId"))
 	if err != nil {
@@ -24,9 +42,7 @@ func AddMessageToChat(c *gin.Context) {
 		return
 	}
 
-	var body struct {
-		Content string `json:"content" binding:"required"`
-	}
+	var body addMessageToChatInput
 
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
