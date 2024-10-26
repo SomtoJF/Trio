@@ -11,6 +11,11 @@ type Agent struct {
 	ExternalID uuid.UUID      `gorm:"unique;type:uuid;default:gen_random_uuid()" json:"id"`
 	Name       string         `json:"name"`
 	ChatID     uint           `json:"-"`
-	Lingo      string         `json:"lingo"`
-	Traits     pq.StringArray `gorm:"type:text[]" json:"traits"`
+	Metadata   *AgentMetadata `gorm:"embedded;embeddedPrefix:metadata_" json:"metadata"`
+}
+
+// Empty if reflection chat
+type AgentMetadata struct {
+	Lingo  string         `json:"lingo"`
+	Traits pq.StringArray `gorm:"type:text[]" json:"traits"`
 }

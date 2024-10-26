@@ -22,6 +22,7 @@ type addMessageToChatInput struct {
 }
 
 // AddMessageToChat godoc
+//
 //	@Summary		Add a message to a chat
 //	@Description	Adds a message to a chat for the authenticated user
 //	@Tags			chat-messages
@@ -165,7 +166,7 @@ Please respond to the user's message and, if appropriate, to the other agent's p
 Use your defined traits to guide your response style and content.
 Engage in a natural, flowing conversation while keeping responses as short as possible, and feel free to ask questions or make observations to keep the dialogue engaging.
 Remember as much context as you can from previous messages and use them when necessary.
-`, agent.Name, strings.Join(agent.Traits, ", "), userName, otherAgent.Name, strings.Join(otherAgent.Traits, ", "),
+`, agent.Name, strings.Join(agent.Metadata.Traits, ", "), userName, otherAgent.Name, strings.Join(otherAgent.Metadata.Traits, ", "),
 		utils.FormatChatHistory(chatHistory), userMessage)
 }
 

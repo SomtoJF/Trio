@@ -17,6 +17,7 @@ type updateAgentInput struct {
 }
 
 // DeleteAgent godoc
+//
 //	@Summary		Delete an agent
 //	@Description	Deletes an agent for the authenticated user
 //	@Tags			agents
@@ -62,6 +63,7 @@ func DeleteAgent(c *gin.Context) {
 }
 
 // GetAgent godoc
+//
 //	@Summary		Get agent details
 //	@Description	Retrieves an agent's details for the authenticated user
 //	@Tags			agents
@@ -102,6 +104,7 @@ func GetAgent(c *gin.Context) {
 }
 
 // UpdateAgent godoc
+//
 //	@Summary		Update an agent's details
 //	@Description	Updates an agent's details for the authenticated user
 //	@Tags			agents
@@ -147,8 +150,8 @@ func UpdateAgent(c *gin.Context) {
 	}
 
 	agent.Name = body.Name
-	agent.Lingo = body.Lingo
-	agent.Traits = body.Traits
+	agent.Metadata.Lingo = body.Lingo
+	agent.Metadata.Traits = body.Traits
 
 	if err := initializers.DB.Save(&agent).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update agent"})

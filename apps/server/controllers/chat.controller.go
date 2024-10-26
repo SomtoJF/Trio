@@ -13,6 +13,7 @@ import (
 
 type createChatInput struct {
 	ChatName string `json:"chatName" binding:"required,max=20"`
+	Type     string `json:"type" binding:"oneof=DEFAULT REFLECTION"`
 }
 
 type addAgentToChatInput struct {
@@ -70,6 +71,7 @@ func CreateChat(c *gin.Context) {
 
 	chat := models.Chat{
 		ChatName: body.ChatName,
+		Type:     models.ChatType(body.Type),
 		UserID:   userModel.ID,
 	}
 
@@ -143,11 +145,21 @@ func AddAgentToChat(c *gin.Context) {
 		}
 	}
 
+	var agentMetadata *models.AgentMetadata
+
+	if chat.Type == models.ChatTypeReflection {
+		agentMetadata = nil
+	} else {
+		agentMetadata = &models.AgentMetadata{
+			Lingo:  body.Lingo,
+			Traits: body.Traits,
+		}
+	}
+
 	agent := models.Agent{
-		Name:   body.Name,
-		Lingo:  body.Lingo,
-		Traits: body.Traits,
-		ChatID: chat.ID,
+		Name:     body.Name,
+		Metadata: agentMetadata,
+		ChatID:   chat.ID,
 	}
 
 	if err := initializers.DB.Create(&agent).Error; err != nil {
@@ -253,12 +265,22 @@ func UpdateChat(c *gin.Context) {
 		return
 	}
 
-	for _, agentData := range body.Agents {
+	var agentMetadata []*models.AgentMetadata
+
+	if chat.Type == models.ChatTypeDefault {
+		for _, agentData := range body.Agents {
+			agentMetadata = append(agentMetadata, &models.AgentMetadata{
+				Lingo:  agentData.Lingo,
+				Traits: agentData.Traits,
+			})
+		}
+	}
+
+	for i, agentData := range body.Agents {
 		agent := models.Agent{
-			Name:   agentData.Name,
-			Lingo:  agentData.Lingo,
-			Traits: agentData.Traits,
-			ChatID: chat.ID,
+			Name:     agentData.Name,
+			Metadata: agentMetadata[i],
+			ChatID:   chat.ID,
 		}
 
 		if err := initializers.DB.Create(&agent).Error; err != nil {
@@ -340,8 +362,8 @@ func GetChatInfo(c *gin.Context) {
 			}{
 				ID:     agent.ExternalID,
 				Name:   agent.Name,
-				Lingo:  agent.Lingo,
-				Traits: agent.Traits,
+				Lingo:  agent.Metadata.Lingo,
+				Traits: agent.Metadata.Traits,
 			}
 		}
 
@@ -405,9 +427,11 @@ func CreateChatWithAgents(c *gin.Context) {
 	// Create agents
 	for _, agentData := range body.Agents {
 		agent := models.Agent{
-			Name:   agentData.Name,
-			Lingo:  agentData.Lingo,
-			Traits: agentData.Traits,
+			Name: agentData.Name,
+			Metadata: &models.AgentMetadata{
+				Lingo:  agentData.Lingo,
+				Traits: agentData.Traits,
+			},
 			ChatID: chat.ID,
 		}
 
