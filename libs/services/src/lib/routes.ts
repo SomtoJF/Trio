@@ -17,7 +17,6 @@ function createPrefixedRoutes<T extends RouteValues<T>>(
 }
 
 const chatRoutes = {
-  CreateWithAgents: 'create-with-agents',
   Default: '',
 } as const;
 

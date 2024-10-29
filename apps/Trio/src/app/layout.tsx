@@ -3,7 +3,7 @@ import './global.css';
 import { Inter } from 'next/font/google';
 import Providers from './providers';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ['latin'], display: 'swap' });
 
 export const metadata = {
   title: 'Welcome to trio',

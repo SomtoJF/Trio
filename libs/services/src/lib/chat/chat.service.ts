@@ -1,4 +1,4 @@
-import { Agent, Chat } from '@trio/types';
+import { Agent, Chat, ChatType } from '@trio/types';
 import { BaseRoute, Route } from '../routes';
 
 interface Data {
@@ -6,8 +6,8 @@ interface Data {
   agents: Partial<Agent>[];
 }
 
-export async function createChatWithAgents(data: Data) {
-  const res = await fetch(`${BaseRoute}/${Route.Chats.CreateWithAgents}`, {
+export async function createChat(data: Data) {
+  const res = await fetch(`${BaseRoute}/chats`, {
     method: 'POST',
     credentials: 'include',
     body: JSON.stringify(data),
@@ -56,7 +56,11 @@ export async function updateChat(
   chatId: string,
   data: {
     chatName: string;
-    agents: { name: string; lingo: string; traits: string[] }[];
+    type: ChatType;
+    agents: {
+      name: string;
+      metadata?: { lingo: string; traits: string[] };
+    }[];
   }
 ) {
   const res = await fetch(`${BaseRoute}/${Route.Chats.Default}${chatId}`, {
