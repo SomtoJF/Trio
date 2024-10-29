@@ -24,14 +24,6 @@ definitions:
     required:
     - content
     type: object
-  controllers.createChatInput:
-    properties:
-      chatName:
-        maxLength: 20
-        type: string
-    required:
-    - chatName
-    type: object
   controllers.createChatWithAgentsInput:
     properties:
       agents:
@@ -55,6 +47,11 @@ definitions:
         type: array
       chatName:
         maxLength: 20
+        type: string
+      type:
+        enum:
+        - DEFAULT
+        - REFLECTION
         type: string
     required:
     - agents
@@ -133,21 +130,25 @@ definitions:
           properties:
             id:
               type: string
-            lingo:
-              maxLength: 20
-              type: string
+            metadata:
+              properties:
+                lingo:
+                  maxLength: 20
+                  type: string
+                traits:
+                  items:
+                    type: string
+                  type: array
+              required:
+              - lingo
+              - traits
+              type: object
             name:
               maxLength: 20
               type: string
-            traits:
-              items:
-                type: string
-              type: array
           required:
           - id
-          - lingo
           - name
-          - traits
           type: object
         type: array
       chatName:
@@ -169,9 +170,14 @@ definitions:
     properties:
       id:
         type: string
-      lingo:
-        type: string
+      metadata:
+        $ref: '#/definitions/models.AgentMetadata'
       name:
+        type: string
+    type: object
+  models.AgentMetadata:
+    properties:
+      lingo:
         type: string
       traits:
         items:
@@ -192,7 +198,17 @@ definitions:
         items:
           $ref: '#/definitions/models.Message'
         type: array
+      type:
+        $ref: '#/definitions/models.ChatType'
     type: object
+  models.ChatType:
+    enum:
+    - DEFAULT
+    - REFLECTION
+    type: string
+    x-enum-varnames:
+    - ChatTypeDefault
+    - ChatTypeReflection
   models.Message:
     properties:
       _:
@@ -352,26 +368,16 @@ paths:
       tags:
       - agents
   /chats:
-    post:
+    delete:
       consumes:
       - application/json
-      description: Creates a new chat for the authenticated user
-      parameters:
-      - description: Chat name
-        in: body
-        name: chatName
-        required: true
-        schema:
-          $ref: '#/definitions/controllers.createChatInput'
+      description: Deletes all chats and associated data belonging to the authenticated
+        user
       produces:
       - application/json
       responses:
-        "201":
-          description: Created chat
-          schema:
-            $ref: '#/definitions/models.Chat'
-        "400":
-          description: Bad request
+        "200":
+          description: All chats deleted successfully
           schema:
             additionalProperties: true
             type: object
@@ -385,7 +391,7 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      summary: Create a new chat
+      summary: Delete all chats for the authenticated user
       tags:
       - chats
   /chats/{chatId}:
@@ -565,7 +571,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Adds a message to a chat for the authenticated user
+      description: Adds a new message to a chat and generates responses from agents
       parameters:
       - description: Chat ID
         in: path
@@ -581,6 +587,11 @@ paths:
       produces:
       - application/json
       responses:
+        "200":
+          description: Reflection response generated successfully
+          schema:
+            additionalProperties: true
+            type: object
         "201":
           description: Message added successfully
           schema:
@@ -601,14 +612,19 @@ paths:
           schema:
             additionalProperties: true
             type: object
+        "424":
+          description: Chat must have at least one agent
+          schema:
+            additionalProperties: true
+            type: object
         "500":
           description: Internal server error
           schema:
             additionalProperties: true
             type: object
-      summary: Add a message to a chat
+      summary: Add a new message to a chat
       tags:
-      - chat-messages
+      - chats
   /chats/{chatId}/messages/reflection:
     post:
       consumes:

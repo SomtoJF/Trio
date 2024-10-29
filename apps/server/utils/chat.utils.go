@@ -47,3 +47,7 @@ func FormatChatHistory(history []models.Message) string {
 	}
 	return formattedHistory.String()
 }
+
+func SaveResponsesToDatabase(responses ...models.Message) error {
+	return initializers.DB.Create(&responses).Error
+}

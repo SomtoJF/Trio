@@ -4,17 +4,15 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/generative-ai-go/genai"
 	"github.com/google/uuid"
 	"github.com/somtojf/trio/initializers"
 	"github.com/somtojf/trio/models"
+	"github.com/somtojf/trio/response"
 	"github.com/somtojf/trio/types"
+	"github.com/somtojf/trio/utils"
 	"gorm.io/gorm"
 )
-
-type createChatInput struct {
-	ChatName string `json:"chatName" binding:"required,max=20"`
-	Type     string `json:"type" binding:"oneof=DEFAULT REFLECTION"`
-}
 
 type addAgentToChatInput struct {
 	Name   string   `json:"name" binding:"required,max=20"`
@@ -22,66 +20,30 @@ type addAgentToChatInput struct {
 	Traits []string `json:"traits" binding:"required"`
 }
 
+type addMessageToChatInput struct {
+	Content string `json:"content" binding:"required"`
+}
+
 type updateChatInput struct {
 	ChatName string `json:"chatName" binding:"required,max=20"`
 	Agents   []struct {
-		ID     uuid.UUID `json:"id" binding:"required"`
-		Name   string    `json:"name" binding:"required,max=20"`
-		Lingo  string    `json:"lingo" binding:"required,max=20"`
-		Traits []string  `json:"traits" binding:"required"`
+		ID       uuid.UUID `json:"id" binding:"required"`
+		Name     string    `json:"name" binding:"required,max=20"`
+		Metadata struct {
+			Lingo  string   `json:"lingo" binding:"required,max=20"`
+			Traits []string `json:"traits" binding:"required"`
+		}
 	} `json:"agents" binding:"required"`
 }
 
 type createChatWithAgentsInput struct {
 	ChatName string `json:"chatName" binding:"required,max=20"`
+	Type     string `json:"type" binding:"oneof=DEFAULT REFLECTION"`
 	Agents   []struct {
 		Name   string   `json:"name" binding:"required,max=20"`
 		Lingo  string   `json:"lingo" binding:"required,max=20"`
 		Traits []string `json:"traits" binding:"required"`
 	} `json:"agents" binding:"required"`
-}
-
-// CreateChat godoc
-//
-//	@Summary		Create a new chat
-//	@Description	Creates a new chat for the authenticated user
-//	@Tags			chats
-//	@Accept			json
-//	@Produce		json
-//	@Param			chatName	body		createChatInput			true	"Chat name"
-//	@Success		201			{object}	models.Chat				"Created chat"
-//	@Failure		400			{object}	map[string]interface{}	"Bad request"
-//	@Failure		401			{object}	map[string]interface{}	"Unauthorized"
-//	@Failure		500			{object}	map[string]interface{}	"Internal server error"
-//	@Router			/chats [post]
-func CreateChat(c *gin.Context) {
-	var body createChatInput
-
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	currentUser, exists := c.Get("currentUser")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
-		return
-	}
-	userModel := currentUser.(models.User)
-
-	chat := models.Chat{
-		ChatName: body.ChatName,
-		Type:     models.ChatType(body.Type),
-		UserID:   userModel.ID,
-	}
-
-	result := initializers.DB.Create(&chat)
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create chat"})
-		return
-	}
-
-	c.JSON(http.StatusCreated, gin.H{"data": chat})
 }
 
 // AddAgentToChat godoc
@@ -226,6 +188,11 @@ func DeleteChat(c *gin.Context) {
 //	@Failure		500			{object}	map[string]interface{}	"Internal server error"
 //	@Router			/chats/{chatId} [put]
 func UpdateChat(c *gin.Context) {
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-cache")
+	c.Header("Connection", "keep-alive")
+	c.Header("Transfer-Encoding", "chunked")
+
 	chatID, err := uuid.Parse(c.Param("chatId"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid chat ID"})
@@ -252,26 +219,43 @@ func UpdateChat(c *gin.Context) {
 		return
 	}
 
+	tx := initializers.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
 	chat.ChatName = body.ChatName
 
-	if err := initializers.DB.Save(&chat).Error; err != nil {
+	if err := tx.Save(&chat).Error; err != nil {
+		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update chat"})
 		return
 	}
 
-	// Update agents
-	if err := initializers.DB.Model(&chat).Association("Agents").Clear(); err != nil {
+	if err := tx.Model(&chat).Association("Agents").Clear(); err != nil {
+		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear old agents"})
 		return
 	}
 
 	var agentMetadata []*models.AgentMetadata
 
-	if chat.Type == models.ChatTypeDefault {
+	if chat.Type == models.ChatTypeReflection {
+		if len(body.Agents) != 2 {
+			tx.Rollback()
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Reflection chat must have exactly two agents"})
+			return
+		}
+		for range body.Agents {
+			agentMetadata = append(agentMetadata, nil)
+		}
+	} else {
 		for _, agentData := range body.Agents {
 			agentMetadata = append(agentMetadata, &models.AgentMetadata{
-				Lingo:  agentData.Lingo,
-				Traits: agentData.Traits,
+				Lingo:  agentData.Metadata.Lingo,
+				Traits: agentData.Metadata.Traits,
 			})
 		}
 	}
@@ -283,10 +267,16 @@ func UpdateChat(c *gin.Context) {
 			ChatID:   chat.ID,
 		}
 
-		if err := initializers.DB.Create(&agent).Error; err != nil {
+		if err := tx.Create(&agent).Error; err != nil {
+			tx.Rollback()
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create agent"})
 			return
 		}
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction"})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": chat})
@@ -353,17 +343,24 @@ func GetChatInfo(c *gin.Context) {
 			}
 		} else if message.SenderType == string(types.SenderTypeAgent) {
 			var agent models.Agent
-			initializers.DB.First(&agent, message.SenderID)
+			initializers.DB.Preload("Metadata").First(&agent, message.SenderID)
 			sender = struct {
-				ID     uuid.UUID `json:"id"`
-				Name   string    `json:"name"`
-				Lingo  string    `json:"lingo"`
-				Traits []string  `json:"traits"`
+				ID       uuid.UUID `json:"id"`
+				Name     string    `json:"name"`
+				Metadata struct {
+					Lingo  string   `json:"lingo"`
+					Traits []string `json:"traits"`
+				}
 			}{
-				ID:     agent.ExternalID,
-				Name:   agent.Name,
-				Lingo:  agent.Metadata.Lingo,
-				Traits: agent.Metadata.Traits,
+				ID:   agent.ExternalID,
+				Name: agent.Name,
+				Metadata: struct {
+					Lingo  string   `json:"lingo"`
+					Traits []string `json:"traits"`
+				}{
+					Lingo:  agent.Metadata.Lingo,
+					Traits: agent.Metadata.Traits,
+				},
 			}
 		}
 
@@ -398,8 +395,119 @@ func GetChatInfo(c *gin.Context) {
 //	@Failure		401			{object}	map[string]interface{}		"Unauthorized"
 //	@Failure		500			{object}	map[string]interface{}		"Internal server error"
 //	@Router			/chats/create-with-agents [post]
-func CreateChatWithAgents(c *gin.Context) {
+func CreateChat(c *gin.Context) {
 	var body createChatWithAgentsInput
+
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	for _, agent := range body.Agents {
+		if len(agent.Traits) > 4 || len(agent.Traits) < 1 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Agent must have at least one trait and a maximum of four traits"})
+			return
+		}
+	}
+
+	currentUser, exists := c.Get("currentUser")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+	userModel := currentUser.(models.User)
+
+	tx := initializers.DB.Begin()
+
+	chat := models.Chat{
+		ChatName: body.ChatName,
+		Type:     models.ChatType(body.Type),
+		UserID:   userModel.ID,
+	}
+
+	if err := tx.Create(&chat).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create chat"})
+		return
+	}
+
+	if body.Type == string(models.ChatTypeReflection) {
+		if len(body.Agents) != 2 {
+			tx.Rollback()
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Reflection chat must have exactly two agents"})
+			return
+		}
+
+		for _, agent := range body.Agents {
+			if err := createAgent(tx, agent.Name, nil, chat.ID); err != nil {
+				tx.Rollback()
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+		}
+	} else {
+		if len(body.Agents) == 0 || len(body.Agents) > 2 {
+			tx.Rollback()
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Chat must have at least one agent and a maximum of two agents"})
+			return
+		}
+
+		for _, agent := range body.Agents {
+			agentMetadata := &models.AgentMetadata{
+				Lingo:  agent.Lingo,
+				Traits: agent.Traits,
+			}
+			if err := createAgent(tx, agent.Name, agentMetadata, chat.ID); err != nil {
+				tx.Rollback()
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+		}
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"data": chat})
+}
+
+// Helper function to create an agent
+func createAgent(tx *gorm.DB, name string, metadata *models.AgentMetadata, chatID uint) error {
+	agent := models.Agent{
+		Name:     name,
+		Metadata: metadata,
+		ChatID:   chatID,
+	}
+	return tx.Create(&agent).Error
+}
+
+// NewMessage godoc
+//
+//	@Summary		Add a new message to a chat
+//	@Description	Adds a new message to a chat and generates responses from agents
+//	@Tags			chats
+//	@Accept			json
+//	@Produce		json
+//	@Param			chatId		path		string					true	"Chat ID"
+//	@Param			messageInput	body	addMessageToChatInput	true	"Message content"
+//	@Success		201			{object}	map[string]interface{}	"Message added successfully"
+//	@Success		200			{object}	map[string]interface{}	"Reflection response generated successfully"
+//	@Failure		400			{object}	map[string]interface{}	"Bad request"
+//	@Failure		401			{object}	map[string]interface{}	"Unauthorized"
+//	@Failure		404			{object}	map[string]interface{}	"Chat not found"
+//	@Failure		424			{object}	map[string]interface{}	"Chat must have at least one agent"
+//	@Failure		500			{object}	map[string]interface{}	"Internal server error"
+//	@Router			/chats/{chatId}/messages [post]
+func NewMessage(c *gin.Context) {
+	chatID, err := uuid.Parse(c.Param("chatId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid chat ID"})
+		return
+	}
+
+	var body addMessageToChatInput
 
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -413,33 +521,87 @@ func CreateChatWithAgents(c *gin.Context) {
 	}
 	userModel := currentUser.(models.User)
 
-	chat := models.Chat{
-		ChatName: body.ChatName,
-		UserID:   userModel.ID,
-	}
-
-	result := initializers.DB.Create(&chat)
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create chat"})
+	var chat models.Chat
+	if err := initializers.DB.Preload("Agents").First(&chat, "external_id = ? AND user_id = ?", chatID, userModel.ID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Chat not found"})
 		return
 	}
 
-	// Create agents
-	for _, agentData := range body.Agents {
-		agent := models.Agent{
-			Name: agentData.Name,
-			Metadata: &models.AgentMetadata{
-				Lingo:  agentData.Lingo,
-				Traits: agentData.Traits,
-			},
-			ChatID: chat.ID,
-		}
-
-		if err := initializers.DB.Create(&agent).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create agent"})
-			return
-		}
+	if len(chat.Agents) == 0 {
+		c.JSON(http.StatusFailedDependency, gin.H{"error": "Chat must have at least one agent"})
+		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"data": chat})
+	client, ok := c.Value("GeminiClient").(*genai.Client)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "couldn't retrieve gemini client"})
+		return
+	}
+
+	// Ensure we have at least one agent
+	if len(chat.Agents) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Chat must have at least one agent"})
+		return
+	}
+
+	response := response.NewResponse(chat.Messages, chat, chat.Agents, userModel, c, client)
+	if chat.Type == models.ChatTypeDefault {
+		agentResponses, err := response.GenerateBasicResponse(body.Content)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if err := utils.SaveResponsesToDatabase(agentResponses...); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save agent responses"})
+			return
+		}
+
+		c.JSON(http.StatusCreated, gin.H{
+			"requestPrompt": body.Content,
+			"data":          agentResponses,
+		})
+		return
+	} else if chat.Type == models.ChatTypeReflection {
+		err = response.GenerateReflectionResponse(body.Content)
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.Status(http.StatusOK)
+}
+
+// DeleteAllChats godoc
+//
+//	@Summary		Delete all chats for the authenticated user
+//	@Description	Deletes all chats and associated data belonging to the authenticated user
+//	@Tags			chats
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	map[string]interface{}	"All chats deleted successfully"
+//	@Failure		401	{object}	map[string]interface{}	"Unauthorized"
+//	@Failure		500	{object}	map[string]interface{}	"Internal server error"
+//	@Router			/chats [delete]
+func DeleteAllChats(c *gin.Context) {
+	currentUser, exists := c.Get("currentUser")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+	userModel := currentUser.(models.User)
+
+	tx := initializers.DB.Begin()
+
+	if err := tx.Where("user_id = ?", userModel.ID).Delete(&models.Chat{}).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete chats"})
+		return
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "All chats deleted successfully"})
 }

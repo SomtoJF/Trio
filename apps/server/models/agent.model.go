@@ -16,6 +16,8 @@ type Agent struct {
 
 // Empty if reflection chat
 type AgentMetadata struct {
-	Lingo  string         `json:"lingo"`
-	Traits pq.StringArray `gorm:"type:text[]" json:"traits"`
+	gorm.Model `json:"-"`
+	Lingo      string         `json:"lingo"`
+	Traits     pq.StringArray `gorm:"type:text[]" json:"traits"`
+	AgentID    uint           `json:"-"`
 }

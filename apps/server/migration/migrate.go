@@ -25,7 +25,7 @@ func main() {
 	`)
 
 	// AutoMigrate other models
-	db.AutoMigrate(&models.User{}, &models.Chat{}, &models.Agent{})
+	db.AutoMigrate(&models.User{}, &models.Chat{}, &models.Agent{}, &models.AgentMetadata{})
 
 	// Manually create Message table with ENUM type
 	db.Exec(`

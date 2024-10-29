@@ -73,7 +73,6 @@ func main() {
 
 		authenticated.POST("/logout", controllers.Logout)
 		authenticated.POST("/reset-password", controllers.ResetPassword)
-
 		authenticated.GET("/completions", controllers.GetCompletion)
 
 		// Chat related endpoints
@@ -84,10 +83,8 @@ func main() {
 			chats.GET("/:chatId", controllers.GetChatInfo)
 			chats.DELETE("/:chatId", controllers.DeleteChat)
 			chats.PUT("/:chatId", controllers.UpdateChat)
-			chats.POST("/:chatId/messages", controllers.AddMessageToChat)
+			chats.POST("/:chatId/messages", controllers.NewMessage)
 			chats.POST("/:chatId/agents", controllers.AddAgentToChat)
-			chats.POST("/create-with-agents", controllers.CreateChatWithAgents)
-			chats.POST("/:chatId/messages/reflection", controllers.PostReflectionMessage)
 		}
 
 		user := authenticated.Group("/me")

@@ -189,8 +189,8 @@ const docTemplate = `{
             }
         },
         "/chats": {
-            "post": {
-                "description": "Creates a new chat for the authenticated user",
+            "delete": {
+                "description": "Deletes all chats and associated data belonging to the authenticated user",
                 "consumes": [
                     "application/json"
                 ],
@@ -200,27 +200,10 @@ const docTemplate = `{
                 "tags": [
                     "chats"
                 ],
-                "summary": "Create a new chat",
-                "parameters": [
-                    {
-                        "description": "Chat name",
-                        "name": "chatName",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/controllers.createChatInput"
-                        }
-                    }
-                ],
+                "summary": "Delete all chats for the authenticated user",
                 "responses": {
-                    "201": {
-                        "description": "Created chat",
-                        "schema": {
-                            "$ref": "#/definitions/models.Chat"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
+                    "200": {
+                        "description": "All chats deleted successfully",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -550,7 +533,7 @@ const docTemplate = `{
         },
         "/chats/{chatId}/messages": {
             "post": {
-                "description": "Adds a message to a chat for the authenticated user",
+                "description": "Adds a new message to a chat and generates responses from agents",
                 "consumes": [
                     "application/json"
                 ],
@@ -558,9 +541,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "chat-messages"
+                    "chats"
                 ],
-                "summary": "Add a message to a chat",
+                "summary": "Add a new message to a chat",
                 "parameters": [
                     {
                         "type": "string",
@@ -580,6 +563,13 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
+                    "200": {
+                        "description": "Reflection response generated successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
                     "201": {
                         "description": "Message added successfully",
                         "schema": {
@@ -603,6 +593,13 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Chat not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "424": {
+                        "description": "Chat must have at least one agent",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -948,18 +945,6 @@ const docTemplate = `{
                 }
             }
         },
-        "controllers.createChatInput": {
-            "type": "object",
-            "required": [
-                "chatName"
-            ],
-            "properties": {
-                "chatName": {
-                    "type": "string",
-                    "maxLength": 20
-                }
-            }
-        },
         "controllers.createChatWithAgentsInput": {
             "type": "object",
             "required": [
@@ -997,6 +982,13 @@ const docTemplate = `{
                 "chatName": {
                     "type": "string",
                     "maxLength": 20
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "DEFAULT",
+                        "REFLECTION"
+                    ]
                 }
             }
         },
@@ -1106,27 +1098,34 @@ const docTemplate = `{
                         "type": "object",
                         "required": [
                             "id",
-                            "lingo",
-                            "name",
-                            "traits"
+                            "name"
                         ],
                         "properties": {
                             "id": {
                                 "type": "string"
                             },
-                            "lingo": {
-                                "type": "string",
-                                "maxLength": 20
+                            "metadata": {
+                                "type": "object",
+                                "required": [
+                                    "lingo",
+                                    "traits"
+                                ],
+                                "properties": {
+                                    "lingo": {
+                                        "type": "string",
+                                        "maxLength": 20
+                                    },
+                                    "traits": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
                             },
                             "name": {
                                 "type": "string",
                                 "maxLength": 20
-                            },
-                            "traits": {
-                                "type": "array",
-                                "items": {
-                                    "type": "string"
-                                }
                             }
                         }
                     }
@@ -1155,10 +1154,18 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "lingo": {
-                    "type": "string"
+                "metadata": {
+                    "$ref": "#/definitions/models.AgentMetadata"
                 },
                 "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.AgentMetadata": {
+            "type": "object",
+            "properties": {
+                "lingo": {
                     "type": "string"
                 },
                 "traits": {
@@ -1189,8 +1196,22 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/models.Message"
                     }
+                },
+                "type": {
+                    "$ref": "#/definitions/models.ChatType"
                 }
             }
+        },
+        "models.ChatType": {
+            "type": "string",
+            "enum": [
+                "DEFAULT",
+                "REFLECTION"
+            ],
+            "x-enum-varnames": [
+                "ChatTypeDefault",
+                "ChatTypeReflection"
+            ]
         },
         "models.Message": {
             "type": "object",
