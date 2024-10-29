@@ -15,6 +15,9 @@ run-server:
 	cd apps/server && \
 	CompileDaemon -command="./trio"
 
+migrations:
+	$(MAKE) run-db-migrate && $(MAKE) swagger-migrate
+
 run-db-migrate:
 	cd apps/server && \
 	go run migration/migrate.go
