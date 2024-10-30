@@ -19,7 +19,7 @@ import (
 )
 
 type ReflectionAgentResponse struct {
-	AgentID   uint   `json:"agentId"`
+	AgentID   string `json:"agentId"`
 	AgentName string `json:"agentName"`
 	Content   string `json:"content"`
 }
@@ -148,9 +148,20 @@ func ReflectionAgentResponseLoop(ctx context.Context, client *genai.Client, agen
 			agentResponses[agent.ID] = response
 
 			responseChan <- ReflectionAgentResponse{
-				AgentID:   agent.ID,
+				AgentID:   agent.ExternalID.String(),
 				AgentName: agent.Name,
 				Content:   response,
+			}
+
+			message := models.Message{
+				Content:    response,
+				SenderType: string(types.SenderTypeAgent),
+				SenderID:   agent.ID,
+				ChatID:     chatHistory[0].ChatID,
+			}
+			if err := initializers.DB.Create(&message).Error; err != nil {
+				log.Printf("Error saving message for agent %s: %v", agent.ID, err)
+				return
 			}
 
 			if strings.HasPrefix(strings.ToLower(response), "agree") || strings.HasSuffix(strings.ToLower(response), "alternate") || response == "" {
@@ -159,12 +170,13 @@ func ReflectionAgentResponseLoop(ctx context.Context, client *genai.Client, agen
 		}
 
 		for agentID, response := range agentResponses {
-			chatHistory = append(chatHistory, models.Message{
+			message := models.Message{
 				Content:    response,
 				SenderType: string(types.SenderTypeAgent),
 				SenderID:   agentID,
 				ChatID:     chatHistory[0].ChatID,
-			})
+			}
+			chatHistory = append(chatHistory, message)
 		}
 	}
 }

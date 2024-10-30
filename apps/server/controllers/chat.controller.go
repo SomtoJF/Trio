@@ -343,25 +343,37 @@ func GetChatInfo(c *gin.Context) {
 			}
 		} else if message.SenderType == string(types.SenderTypeAgent) {
 			var agent models.Agent
-			initializers.DB.Preload("Metadata").First(&agent, message.SenderID)
-			sender = struct {
-				ID       uuid.UUID `json:"id"`
-				Name     string    `json:"name"`
-				Metadata struct {
-					Lingo  string   `json:"lingo"`
-					Traits []string `json:"traits"`
-				}
-			}{
-				ID:   agent.ExternalID,
-				Name: agent.Name,
-				Metadata: struct {
-					Lingo  string   `json:"lingo"`
-					Traits []string `json:"traits"`
+			if chat.Type == models.ChatTypeReflection {
+				initializers.DB.First(&agent, message.SenderID)
+				sender = struct {
+					ID   uuid.UUID `json:"id"`
+					Name string    `json:"name"`
 				}{
-					Lingo:  agent.Metadata.Lingo,
-					Traits: agent.Metadata.Traits,
-				},
+					ID:   agent.ExternalID,
+					Name: agent.Name,
+				}
+			} else {
+				initializers.DB.Preload("Metadata").First(&agent, message.SenderID)
+				sender = struct {
+					ID       uuid.UUID `json:"id"`
+					Name     string    `json:"name"`
+					Metadata struct {
+						Lingo  string   `json:"lingo"`
+						Traits []string `json:"traits"`
+					}
+				}{
+					ID:   agent.ExternalID,
+					Name: agent.Name,
+					Metadata: struct {
+						Lingo  string   `json:"lingo"`
+						Traits []string `json:"traits"`
+					}{
+						Lingo:  agent.Metadata.Lingo,
+						Traits: agent.Metadata.Traits,
+					},
+				}
 			}
+
 		}
 
 		messagesWithSenders = append(messagesWithSenders, MessageWithSender{
