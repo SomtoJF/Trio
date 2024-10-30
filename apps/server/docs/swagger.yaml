@@ -82,13 +82,6 @@ definitions:
     - newPassword
     - password
     type: object
-  controllers.reflectionMessageInput:
-    properties:
-      content:
-        type: string
-    required:
-    - content
-    type: object
   controllers.signUpInput:
     properties:
       fullName:
@@ -625,54 +618,6 @@ paths:
       summary: Add a new message to a chat
       tags:
       - chats
-  /chats/{chatId}/messages/reflection:
-    post:
-      consumes:
-      - application/json
-      description: Adds a reflection message to a chat for the authenticated user
-      parameters:
-      - description: Chat ID
-        in: path
-        name: chatId
-        required: true
-        type: string
-      - description: Message content
-        in: body
-        name: messageInput
-        required: true
-        schema:
-          $ref: '#/definitions/controllers.reflectionMessageInput'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Reflection message added successfully
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad request
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Chat not found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Post a reflection message
-      tags:
-      - chat-messages
   /chats/create-with-agents:
     post:
       consumes:

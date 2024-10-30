@@ -73,3 +73,61 @@ export async function updateChat(
   if (res.status > 299) throw new Error(result.error ?? res.statusText);
   return result.data;
 }
+
+export async function streamCompletions(
+  chatId: string,
+  content: string,
+  onData: (data: string) => void,
+  onError: (error: string) => void,
+  onComplete: () => void
+): Promise<any> {
+  try {
+    const response = await fetch(
+      `${BaseRoute}/${Route.Chats.Default}${chatId}/messages`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content }),
+        credentials: 'include',
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('Failed to get response reader');
+    }
+
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n');
+
+      for (const line of lines) {
+        if (line.startsWith('data:')) {
+          const eventData = line.slice(5);
+          if (eventData === '<nil>') {
+            onComplete();
+            return;
+          }
+          try {
+            onData(eventData);
+          } catch (e) {
+            console.error('Failed to parse event data:', e);
+          }
+        }
+      }
+    }
+  } catch (err: any) {
+    onError(err.message);
+  }
+}

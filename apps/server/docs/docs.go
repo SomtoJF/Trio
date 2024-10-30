@@ -615,76 +615,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/chats/{chatId}/messages/reflection": {
-            "post": {
-                "description": "Adds a reflection message to a chat for the authenticated user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "chat-messages"
-                ],
-                "summary": "Post a reflection message",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Chat ID",
-                        "name": "chatId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Message content",
-                        "name": "messageInput",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/controllers.reflectionMessageInput"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Reflection message added successfully",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "Chat not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
         "/login": {
             "post": {
                 "description": "Logs in a user and returns an access token",
@@ -1024,17 +954,6 @@ const docTemplate = `{
                 "password": {
                     "type": "string",
                     "maxLength": 20
-                }
-            }
-        },
-        "controllers.reflectionMessageInput": {
-            "type": "object",
-            "required": [
-                "content"
-            ],
-            "properties": {
-                "content": {
-                    "type": "string"
                 }
             }
         },
