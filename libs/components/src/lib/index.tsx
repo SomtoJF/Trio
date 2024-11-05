@@ -6,3 +6,4 @@ export * from './UpdateReflectionModal';
 export * from './UpdateDefaultChat';
 export * from './DefaultChatDisplay';
 export * from './ReflectionChatDisplay';
+export * from './OptimalMessage';

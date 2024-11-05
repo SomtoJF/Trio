@@ -124,6 +124,9 @@ devDependencies:
   '@swc/helpers':
     specifier: ~0.5.11
     version: 0.5.13
+  '@types/event-source-polyfill':
+    specifier: ^1.0.5
+    version: 1.0.5
   '@types/jest':
     specifier: ^29.5.12
     version: 29.5.12
@@ -4298,6 +4301,10 @@ packages:
 
   /@types/estree@1.0.5:
     resolution: {integrity: sha512-/kYRxGDLWzHOB7q+wtSUQlFrtcdUccpfy+X+9iMBpHK8QLLhx2wIPYuS5DYtR9Wa/YlZAbIovy7qVdB1Aq6Lyw==}
+    dev: true
+
+  /@types/event-source-polyfill@1.0.5:
+    resolution: {integrity: sha512-iaiDuDI2aIFft7XkcwMzDWLqo7LVDixd2sR6B4wxJut9xcp/Ev9bO4EFg4rm6S9QxATLBj5OPxdeocgmhjwKaw==}
     dev: true
 
   /@types/express-serve-static-core@4.19.5:

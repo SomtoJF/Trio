@@ -1,13 +1,17 @@
 'use client';
 
 import { CiSettings } from 'react-icons/ci';
-import { Chat } from '@trio/types';
+import { Chat, Message as MessageType, SenderTypeEnum } from '@trio/types';
 import { v4 } from 'uuid';
 import { Message } from './Message';
 import { UpdateReflectionModal } from './UpdateReflectionModal';
-import { useReflectionChat } from '@trio/hooks';
+import { useAuthStore, useReflectionChat } from '@trio/hooks';
 import { PlaceholdersAndVanishInput } from '@/shadcn/ui/placeholders-and-vanish-input';
-import { useState } from 'react';
+import { Skeleton } from '@/shadcn/ui/skeleton';
+import { useState, useRef, useEffect } from 'react';
+import { OptimalMessage } from './OptimalMessage';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@trio/query-key-factory';
 
 const placeholders = [
   'How many Rs are in the word strawberry',
@@ -19,33 +23,86 @@ const placeholders = [
 
 export function ReflectionChatDisplay({ chat }: { chat: Chat }) {
   const { sendMessage } = useReflectionChat(chat.id);
-
   const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const [messages, setMessages] = useState<MessageType[]>(chat.messages);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const currentUser = useAuthStore((state) => state.user);
+  const queryClient = useQueryClient();
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMessage(e.target.value);
   };
+
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!message.trim()) return;
+
+    const userMessage: MessageType = {
+      id: v4(),
+      content: message,
+      senderType: SenderTypeEnum.USER,
+      sender: { username: currentUser?.userName },
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setSending(true);
+
+    const currentMessage = message;
+    setMessage('');
+
     sendMessage({
       chatId: chat.id,
-      content: message,
-      onData: (data) => console.log(JSON.parse(data)),
-      onError: (error) => console.error(error),
-      onComplete: () => console.log('complete'),
+      content: currentMessage,
+      onData: (data) => {
+        const parsedData: {
+          content: string;
+          agentId: string;
+          agentName: string;
+        } = JSON.parse(data);
+        console.log(parsedData);
+
+        const newMessage: MessageType = {
+          id: parsedData.agentId,
+          content: parsedData.content,
+          senderType: SenderTypeEnum.AGENT,
+          sender: {
+            name: parsedData.agentName,
+          },
+        };
+        setMessages((prev) => [...prev, newMessage]);
+      },
+      onError: (error) => {
+        console.error(error);
+        setSending(false);
+      },
+      onComplete: () => {
+        setSending(false);
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.chat.getOne(chat.id),
+        });
+      },
     });
   };
 
   return (
     <>
-      <div className="overflow-y-scroll w-full h-full flex flex-col gap-5 pb-32">
+      <div className="overflow-y-scroll w-full h-full flex flex-col gap-5 pb-20">
         <div className="text-white fixed font-semibold w-full text-sm sm:text-lg">
           <UpdateReflectionModal
             chat={chat}
             trigger={
               <button
                 type="button"
-                className="flex items-center gap-1 bg-transparent"
+                className="flex items-center gap-1 bg-transparent relative z-[9999]"
               >
                 {chat.chatName}
                 <CiSettings />
@@ -53,32 +110,57 @@ export function ReflectionChatDisplay({ chat }: { chat: Chat }) {
             }
           />
         </div>
-        {chat.messages?.length > 0 &&
-          chat.messages.map((message, index) => {
+        {messages?.length > 0 &&
+          messages.map((message, index) => {
             const isSameSender =
               index !== 0 &&
-              chat.messages[index - 1].sender.username ===
-                message.sender.username &&
-              chat.messages[index - 1].sender.name === message.sender.name;
+              messages[index - 1].sender.username === message.sender.username &&
+              messages[index - 1].sender.name === message.sender.name;
 
-            return (
-              <Message
-                key={v4()}
-                senderType={message.senderType}
-                messageContent={message.content}
-                senderName={
-                  isSameSender
-                    ? undefined
-                    : message.sender.username ?? message.sender.name
-                }
-              />
-            );
+            if (message.content.startsWith('agree')) return;
+            else if (messages[index + 1]?.content.startsWith('agree'))
+              return (
+                <OptimalMessage
+                  key={v4()}
+                  senderType={message.senderType}
+                  messageContent={message.content}
+                  senderName={
+                    isSameSender
+                      ? undefined
+                      : message.sender.username ?? message.sender.name
+                  }
+                />
+              );
+            else
+              return (
+                <Message
+                  key={v4()}
+                  senderType={message.senderType}
+                  messageContent={message.content}
+                  senderName={
+                    isSameSender
+                      ? undefined
+                      : message.sender.username ?? message.sender.name
+                  }
+                />
+              );
           })}
+        <div ref={messagesEndRef} />
+        {sending ? (
+          <div className="space-y-2 self-start">
+            <Skeleton className="h-4 w-[250px] bg-slate-800 animate-pulse" />
+            <Skeleton className="h-4 w-[200px] bg-slate-800 animate-pulse" />
+          </div>
+        ) : (
+          ''
+        )}
       </div>
+
       <PlaceholdersAndVanishInput
         placeholders={placeholders}
         onChange={handleChange}
         onSubmit={onSubmit}
+        disabled={sending}
       />
     </>
   );

@@ -2,7 +2,7 @@ export interface Message {
   id: string;
   content: string;
   senderType: SenderTypeEnum;
-  senderId: number;
+  senderId?: number;
   sender: any;
 }
 

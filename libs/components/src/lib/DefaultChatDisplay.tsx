@@ -7,7 +7,7 @@ import { v4 } from 'uuid';
 import { Message } from './Message';
 import { useDefaultChat } from '@trio/hooks';
 import { PlaceholdersAndVanishInput } from '@/shadcn/ui/placeholders-and-vanish-input';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const placeholders = [
   'How do I ask someone out without making it awkward?',
@@ -20,6 +20,15 @@ const placeholders = [
 export function DefaultChatDisplay({ chat }: { chat: Chat }) {
   const { sendMessage } = useDefaultChat(chat.id);
   const [message, setMessage] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [chat.messages]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMessage(e.target.value);
@@ -67,6 +76,7 @@ export function DefaultChatDisplay({ chat }: { chat: Chat }) {
               />
             );
           })}
+        <div ref={messagesEndRef} />
       </div>
       <PlaceholdersAndVanishInput
         placeholders={placeholders}

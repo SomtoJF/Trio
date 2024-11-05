@@ -46,6 +46,7 @@
     "@swc/cli": "~0.3.12",
     "@swc/core": "~1.5.7",
     "@swc/helpers": "~0.5.11",
+    "@types/event-source-polyfill": "^1.0.5",
     "@types/jest": "^29.5.12",
     "@types/node": "18.16.9",
     "@types/react": "18.3.1",
