@@ -7,7 +7,7 @@ import { Chat, ChatType } from '@trio/types';
 import { z } from 'zod';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { updateChat } from '@trio/services';
+import { deleteChat, updateChat } from '@trio/services';
 import {
   Form,
   FormControl,
@@ -31,6 +31,7 @@ import { queryKeys } from '@trio/query-key-factory';
 import { AiOutlineLoading, AiOutlineMinus } from 'react-icons/ai';
 import { Button } from '@/shadcn/ui/button';
 import { Input } from '@/shadcn/ui/input';
+import { useRouter } from 'next/navigation';
 
 const chatTypes = Object.values(ChatType).map((type) => ({
   label: type,
@@ -59,6 +60,7 @@ export function UpdateReflectionModal({
     agents: z.array(reflectionAgentSchema),
   });
 
+  const { push } = useRouter();
   const [agentCount, setAgentCount] = useState(chat.agents.length);
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -96,8 +98,24 @@ export function UpdateReflectionModal({
     },
   });
 
+  const deleteChatMutation = useMutation({
+    mutationFn: (chatID: string) => deleteChat(chatID),
+    onSuccess: () => {
+      toast.success('Chat deleted');
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.chat.all,
+      });
+      setTimeout(() => {
+        push('/chat/new');
+      }, 2000);
+    },
+    onError: (error) => {
+      toast.error(error.message);
+      throw error;
+    },
+  });
+
   const onSubmit = (values: z.infer<typeof reflectionFormSchema>) => {
-    console.log(values);
     if (values.agents.length > 2) {
       toast.error('Cannot have more than two agents in a chat');
       return;
@@ -213,17 +231,30 @@ export function UpdateReflectionModal({
                 <IoAddOutline className="mr-2" />
                 Add Agent
               </Button>
-              <Button
-                type="submit"
-                className="text-xs font-semibold"
-                disabled={updateChatMutation.isPending}
-              >
-                {updateChatMutation.isPending ? (
-                  <AiOutlineLoading className="animate-spin" />
-                ) : (
-                  'Save'
-                )}
-              </Button>
+              <div className="w-full flex gap-2 flex-1">
+                <Button
+                  type="submit"
+                  className="text-xs font-semibold w-full"
+                  disabled={updateChatMutation.isPending}
+                >
+                  {updateChatMutation.isPending ? (
+                    <AiOutlineLoading className="animate-spin" />
+                  ) : (
+                    'Save'
+                  )}
+                </Button>
+                <Button
+                  className="text-xs font-semibold bg-white text-red-500 w-full hover:bg-red-500 hover:text-white"
+                  disabled={deleteChatMutation.isPending}
+                  onClick={() => deleteChatMutation.mutate(chat.id)}
+                >
+                  {deleteChatMutation.isPending ? (
+                    <AiOutlineLoading className="animate-spin" />
+                  ) : (
+                    'Delete Chat'
+                  )}
+                </Button>
+              </div>
             </div>
           </form>
         </Form>

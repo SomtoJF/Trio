@@ -140,3 +140,13 @@ export async function streamCompletions(
     onComplete();
   }
 }
+
+export async function deleteChat(chatId: string): Promise<void> {
+  const res = await fetch(`${BaseRoute}/${Route.Chats.Default}${chatId}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+  if (res.status > 299) throw new Error(res.statusText);
+
+  return;
+}
