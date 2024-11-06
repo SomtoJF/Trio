@@ -118,7 +118,10 @@ export function ReflectionChatDisplay({ chat }: { chat: Chat }) {
               messages[index - 1].sender.name === message.sender.name;
 
             if (message.content.startsWith('agree')) return;
-            else if (messages[index + 1]?.content.startsWith('agree'))
+            else if (
+              messages[index + 1]?.content.startsWith('agree') &&
+              message.senderType === SenderTypeEnum.AGENT
+            )
               return (
                 <OptimalMessage
                   key={v4()}
@@ -147,9 +150,8 @@ export function ReflectionChatDisplay({ chat }: { chat: Chat }) {
           })}
         <div ref={messagesEndRef} />
         {sending ? (
-          <div className="space-y-2 self-start">
-            <Skeleton className="h-4 w-[250px] bg-slate-800 animate-pulse" />
-            <Skeleton className="h-4 w-[200px] bg-slate-800 animate-pulse" />
+          <div className="text-white font-bold text-xs animate-pulse">
+            ...thinking
           </div>
         ) : (
           ''
