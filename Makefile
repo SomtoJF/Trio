@@ -28,5 +28,6 @@ swagger-migrate:
 
 clean:
 	docker stop trio-db && docker rm trio-db
+	docker stop trio-qdrant && docker rm trio-qdrant
 	-pkill -f "CompileDaemon -command=./trio" # Stop the server
 	-pkill -f "npx nx dev Trio" # Stop the web app

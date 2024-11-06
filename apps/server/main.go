@@ -10,6 +10,7 @@ import (
 	"github.com/google/generative-ai-go/genai"
 	"github.com/somtojf/trio/clients"
 	"github.com/somtojf/trio/controllers"
+	"github.com/somtojf/trio/qdrantpackage"
 
 	docs "github.com/somtojf/trio/docs"
 	"github.com/somtojf/trio/initializers"
@@ -19,8 +20,13 @@ import (
 )
 
 func init() {
+	var collections = []qdrantpackage.CollectionName{qdrantpackage.Messages}
+
 	initializers.LoadEnvVariables()
 	initializers.ConnectToDb()
+	qdrantpackage.ConnectToQdrant()
+
+	qdrantpackage.CreateQdrantCollections(qdrantpackage.QdrantClient, collections)
 }
 
 func SetContext(geminiClient *genai.Client) gin.HandlerFunc {
