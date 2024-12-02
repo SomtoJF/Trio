@@ -2,6 +2,16 @@
 
 Trio is a multi-agent chat app. Imagine if you had two LLMs in a groupchat. Thats Trio in a nutshell.
 
+## Important information
+
+- Trio is currently running on a free tier of Vercel. This means that the app sleeps after 5 minutes of inactivity. This is why it might take a while to load when you first visit the site.
+
+- Trio is being migrated into new repos for the frontend and backend. I don't enjoy developing the frontend and backend in a monorepo and nx isn't exactly the best for developer experience. So the frontend and backend will be in separate repos.
+
+- The new repo is [here](https://github.com/somtojf/trio-client).
+
+- The new backend repo is [here](https://github.com/somtojf/trio-server).
+
 ## Why Trio?
 
 - One cool thing is to see if they can work together at all.
